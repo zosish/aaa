@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcate.mapper.ReservationsMapper">
+    <resultMap id="BaseResultMap" type="com.zrrd.catcate.entity.Reservations">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="cat_id" jdbcType="BIGINT" property="catId"/>
+        <result column="reservation_date" jdbcType="DATE" property="reservationDate"/>
+        <result column="time_slot" jdbcType="VARCHAR" property="timeSlot"/>
+        <result column="visitor_count" jdbcType="INTEGER" property="visitorCount"/>
+        <result column="purpose" jdbcType="VARCHAR" property="purpose"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="admin_notes" jdbcType="VARCHAR" property="adminNotes"/>
+        <result column="user_notes" jdbcType="VARCHAR" property="userNotes"/>
+        <result column="cancel_reason" jdbcType="VARCHAR" property="cancelReason"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        select id,
+               user_id,
+               cat_id,
+               reservation_date,
+               time_slot,
+               visitor_count,
+               purpose,
+               status,
+               admin_notes,
+               user_notes,
+               cancel_reason,
+               create_time,
+               update_time
+        from reservations
+    </sql>
+    <select id="selectNoNull"
+            parameterType="com.zrrd.catcate.entity.Reservations"
+            resultMap="BaseResultMap">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="id != null and id !=''">and id = #{id}</if>
+            <if test="userId != null and userId !=''">and user_id = #{userId}</if>
+            <if test="catId != null and catId !=''">and cat_id = #{catId}</if>
+            <if test="reservationDate != null and reservationDate != ''">and reservation_date = #{reservationDate}</if>
+            <if test="timeSlot != null and timeSlot !=''">and time_slot = #{timeSlot}</if>
+            <if test="visitorCount != null and visitorCount !=''">and visitor_count = #{visitorCount}</if>
+            <if test="purpose != null and purpose !=''">and purpose = #{purpose}</if>
+            <if test="status != null and status !=''">and status = #{status}</if>
+            <if test="adminNotes != null and adminNotes !=''">and admin_notes = #{adminNotes}</if>
+            <if test="userNotes != null and userNotes !=''">and user_notes = #{userNotes}</if>
+            <if test="cancelReason != null and cancelReason !=''">and cancel_reason = #{cancelReason}</if>
+            <if test="createTime != null">and create_time = #{createTime}</if>
+            <if test="updateTime != null">and update_time = #{updateTime}</if>
+        </where>
+        limit #{offset}, #{pageSize}
+    </select>
+    <select id="countNoNull"
+            resultType="java.lang.Integer">
+        select count(*)
+        from reservations
+        <where>
+            <if test="id != null and id !=''">and id = #{id}</if>
+            <if test="userId != null and userId !=''">and user_id = #{userId}</if>
+            <if test="catId != null and catId !=''">and cat_id = #{catId}</if>
+            <if test="reservationDate != null and reservationDate != ''">and reservation_date = #{reservationDate}</if>
+        </where>
+    </select>
+
+    <!--    客户预约表查询开始-->
+    <resultMap id="AppointmentResultMap" type="com.zrrd.catcate.entity.VO.ReservationsVO">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="cat_id" jdbcType="BIGINT" property="catId"/>
+        <result column="reservation_date" jdbcType="DATE" property="reservationDate"/>
+        <result column="time_slot" jdbcType="VARCHAR" property="timeSlot"/>
+        <result column="visitor_count" jdbcType="INTEGER" property="visitorCount"/>
+        <result column="purpose" jdbcType="VARCHAR" property="purpose"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="admin_notes" jdbcType="VARCHAR" property="adminNotes"/>
+        <result column="user_notes" jdbcType="VARCHAR" property="userNotes"/>
+        <result column="cancel_reason" jdbcType="VARCHAR" property="cancelReason"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <!-- 新增的关联字段 -->
+        <result column="userName" jdbcType="VARCHAR" property="username"/>
+        <result column="catName" jdbcType="VARCHAR" property="catName"/>
+        <result column="phone" jdbcType="VARCHAR" property="phone"/>
+    </resultMap>
+
+    <select id="listAppointment" resultMap="AppointmentResultMap">
+        select r.*, u.username as userName, c.name as catName, u.phone as phone
+        from reservations r
+        left join users u on r.user_id = u.id
+        left join cats c on r.cat_id = c.id
+        <where>
+            <if test="id != null and id !=''">and id = #{id}</if>
+            <if test="userId != null and userId !=''">and user_id = #{userId}</if>
+            <if test="catId != null and catId !=''">and r.cat_id = #{catId}</if>
+            <if test="reservationDate != null and reservationDate != ''">and r.reservation_date = #{reservationDate}</if>
+            <if test="timeSlot != null and timeSlot !=''">and r.time_slot like concat('%', #{timeSlot}, '%')</if>
+            <if test="visitorCount != null and visitorCount !=''">and visitor_count = #{visitorCount}</if>
+            <if test="purpose != null and purpose !=''">and purpose = #{purpose}</if>
+            <if test="status != null and status !=''">and r.status = #{status}</if>
+            <if test="adminNotes != null and adminNotes !=''">and admin_notes = #{adminNotes}</if>
+            <if test="userNotes != null and userNotes !=''">and user_notes = #{userNotes}</if>
+            <if test="cancelReason != null and cancelReason !=''">and cancel_reason = #{cancelReason}</if>
+            <if test="createTime != null">and create_time = #{createTime}</if>
+            <if test="updateTime != null">and update_time = #{updateTime}</if>
+            <if test="username != null and username !=''">and u.username like concat('%', #{username}, '%')</if>
+            <if test="phone != null and phone !=''">and u.phone like concat('%' ,#{phone}, '%')</if>
+        </where>
+        limit #{offset}, #{pageSize}
+    </select>
+
+
+    <!--    客户预约表结束-->
+</mapper>

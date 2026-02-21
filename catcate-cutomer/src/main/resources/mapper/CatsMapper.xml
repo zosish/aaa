@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcatecutomer.mapper.CatsMapper">
+    <resultMap id="CatsMap" type="com.zrrd.catcatecutomer.entity.Cats">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="breed" column="breed"/>
+        <result property="age" column="age"/>
+        <result property="gender" column="gender"/>
+        <result property="healthStatus" column="health_status"/>
+        <result property="personality" column="personality"/>
+        <result property="photoUrl" column="photo_url"/>
+        <result property="adoptionStatus" column="adoption_status"/>
+        <result property="dailyCare" column="daily_care"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    <sql id="BaseResultMap">
+        select id, name, breed, age, gender, health_status, personality,
+               photo_url, adoption_status, daily_care, is_active, create_time, update_time
+        from cats
+    </sql>
+    <select id="selectCatsNoNull" resultType="com.zrrd.catcatecutomer.entity.Cats">
+        <include refid="BaseResultMap"/>
+        <where>
+            <if test="id != null and id != ''">and id = #{id}</if>
+            <if test="name != null and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="breed != null and breed != ''">and breed = #{breed}</if>
+            <if test="age != null and age != ''">and age = #{age}</if>
+            <if test="gender != null and gender != ''">and gender = #{gender}</if>
+            <if test="healthStatus != null and healthStatus != ''">and health_status = #{healthStatus}</if>
+            <if test="personality != null and personality != ''">and personality = #{personality}</if>
+            <if test="photoUrl != null and photoUrl != ''">and photo_url = #{photoUrl}</if>
+            <if test="adoptionStatus != null and adoptionStatus != ''">and adoption_status = #{adoptionStatus}</if>
+            <if test="dailyCare != null and dailyCare != ''">and daily_care = #{dailyCare}</if>
+            <if test="isActive != null and isActive != ''">and is_active = #{isActive}</if>
+            <if test="createTime != null">and create_time = #{createTime}</if>
+            <if test="updateTime != null">and update_time = #{updateTime}</if>
+        </where>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    <select id="countCatsNoNull" resultType="int">
+        select count(*) from cats
+        <where>
+            <if test="name != null and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="breed != null and breed != ''">and breed = #{breed}</if>
+            <if test="age != null and age != ''">and age = #{age}</if>
+            <if test="gender != null and gender != ''">and gender = #{gender}</if>
+        </where>
+    </select>
+
+    <!-- 获取预约次数最多的热门猫咪 -->
+    <select id="getPopularCats" resultMap="CatsMap">
+        SELECT c.*, COUNT(r.id) as reservation_count
+        FROM cats c
+                 LEFT JOIN reservations r ON c.id = r.cat_id AND r.status IN ('CONFIRMED', 'COMPLETED')
+        WHERE c.is_active = 1 AND c.adoption_status = 'AVAILABLE'
+        GROUP BY c.id
+        ORDER BY reservation_count DESC, c.create_time DESC
+            LIMIT #{limit}
+    </select>
+</mapper>

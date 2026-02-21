@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcate.mapper.ReviewsMapper">
+
+    <resultMap id="BaseResultMap" type="com.zrrd.catcate.entity.Reviews">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="target_type" jdbcType="VARCHAR" property="targetType"/>
+        <result column="target_id" jdbcType="BIGINT" property="targetId"/>
+        <result column="order_id" jdbcType="BIGINT" property="orderId"/>
+        <result column="rating" jdbcType="INTEGER" property="rating"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="images" jdbcType="VARCHAR" property="images"/>
+        <result column="is_anonymous" jdbcType="TINYINT" property="isAnonymous"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="admin_reply" jdbcType="VARCHAR" property="adminReply"/>
+        <result column="like_count" jdbcType="INTEGER" property="likeCount"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <!-- 用户信息 -->
+        <result column="user_nickname" jdbcType="VARCHAR" property="userNickname"/>
+        <result column="user_avatar" jdbcType="VARCHAR" property="userAvatar"/>
+        <!-- 评价对象信息 -->
+        <result column="target_name" jdbcType="VARCHAR" property="targetName"/>
+        <!-- 订单信息 -->
+        <result column="order_number" jdbcType="VARCHAR" property="orderNumber"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        r.id, r.user_id, r.target_type, r.target_id, r.order_id, r.rating, r.content,
+        r.images, r.is_anonymous, r.status, r.admin_reply, r.like_count,
+        r.create_time, r.update_time,
+        COALESCE(u.nickname, u.username, CONCAT('用户', r.user_id)) as user_nickname,
+        COALESCE(u.avatar, 'https://picsum.photos/seed/user/100/100') as user_avatar,
+        u.username as user_username,
+        CASE
+            WHEN r.target_type = 'CAT' THEN c.name
+            WHEN r.target_type = 'PRODUCT' THEN p.name
+            ELSE '未知对象'
+        END as target_name,
+        o.order_number
+    </sql>
+
+    <select id="selectReviewsNoNull" parameterType="map" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM reviews r
+        LEFT JOIN users u ON r.user_id = u.id
+        LEFT JOIN cats c ON r.target_type = 'CAT' AND r.target_id = c.id
+        LEFT JOIN products p ON r.target_type = 'PRODUCT' AND r.target_id = p.id
+        LEFT JOIN orders o ON r.order_id = o.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (r.content LIKE CONCAT('%', #{keyword}, '%')
+                OR u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR u.username LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="targetType != null and targetType != ''">AND r.target_type = #{targetType}</if>
+            <if test="status != null and status != ''">AND r.status = #{status}</if>
+            <if test="rating != null and rating != ''">AND r.rating = #{rating}</if>
+        </where>
+        ORDER BY r.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countReviewsNoNull" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM reviews r
+        LEFT JOIN users u ON r.user_id = u.id AND r.is_anonymous = 0
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (r.content LIKE CONCAT('%', #{keyword}, '%')
+                OR u.nickname LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="targetType != null and targetType != ''">AND r.target_type = #{targetType}</if>
+            <if test="status != null and status != ''">AND r.status = #{status}</if>
+            <if test="rating != null and rating != ''">AND r.rating = #{rating}</if>
+        </where>
+    </select>
+</mapper>

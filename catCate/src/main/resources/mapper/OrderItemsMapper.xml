@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcate.mapper.OrderItemsMapper">
+    <select id="selectAllUserProductInfo" resultType="com.zrrd.catcate.entity.VO.UserProductVO">
+        SELECT u.id             AS userId,
+               u.username,
+               u.nickname,
+               o.order_number   AS orderNumber,
+               o.create_time    AS orderTime,
+               o.order_status   AS orderStatus,
+               o.payment_status AS paymentStatus,
+               oi.product_id    AS productId,
+               oi.product_name  AS productName,
+               oi.product_price AS productPrice,
+               oi.quantity,
+               oi.subtotal,
+               p.category,
+               p.brand,
+               p.image_url      AS imageUrl
+        FROM order_items oi
+                 JOIN orders o ON oi.order_id = o.id
+                 JOIN users u ON o.user_id = u.id
+                 JOIN products p ON oi.product_id = p.id
+        ORDER BY o.create_time DESC
+    </select>
+</mapper>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcate.mapper.ProductCategoriesMapper">
+    <resultMap id="BaseResultMap" type="com.zrrd.catcate.entity.ProductCategories">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="code" jdbcType="VARCHAR" property="code" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="icon" jdbcType="VARCHAR" property="icon" />
+        <result column="sort_order" jdbcType="INTEGER" property="sortOrder" />
+        <result column="parent_id" jdbcType="BIGINT" property="parentId" />
+        <result column="is_active" jdbcType="TINYINT" property="isActive" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    </resultMap>
+    <sql id="Base_Column_List">
+        select id, name, code, description, icon, sort_order, parent_id, is_active, create_time, update_time from product_categories
+    </sql>
+    <select id="selectProductCategoriesNoNull" parameterType="map" resultMap="BaseResultMap">
+        <include refid="Base_Column_List" />
+        <where>
+            <if test="id != null and id != ''">and id = #{id}</if>
+            <if test="name != null and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="code != null and code != ''">and code = #{code}</if>
+            <if test="description != null and description != ''">and description = #{description}</if>
+            <if test="icon != null and icon != ''">and icon = #{icon}</if>
+            <if test="sortOrder != null and sortOrder != ''">and sort_order = #{sortOrder}</if>
+            <if test="parentId != null and parentId != ''">and parent_id = #{parentId}</if>
+            <if test="isActive != null and isActive != ''">and is_Active = #{isActive}</if>
+            <if test="createTime != null">and create_time = #{createTime}</if>
+            <if test="updateTime != null">and update_time = #{updateTime}</if>
+        </where>
+        limit #{offset}, #{pageSize}
+    </select>
+    <select id="countProductCategoriesNoNull" parameterType="map" resultType="int">
+        select count(*) from product_categories
+    </select>
+</mapper>

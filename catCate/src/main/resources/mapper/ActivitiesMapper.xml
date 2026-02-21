@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcate.mapper.ActivitiesMapper">
+    <resultMap id="ActivitiesMap" type="com.zrrd.catcate.entity.Activities">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="cover_image" jdbcType="VARCHAR" property="coverImage"/>
+        <result column="activity_type" jdbcType="VARCHAR" property="activityType"/>
+        <result column="setmeal_price" jdbcType="VARCHAR" property="setmealPrice"/>
+        <result column="start_time" jdbcType="TIMESTAMP" property="startTime"/>
+        <result column="end_time" jdbcType="TIMESTAMP" property="endTime"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="is_featured" jdbcType="TINYINT" property="isFeatured"/>
+        <result column="view_count" jdbcType="INTEGER" property="viewCount"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        select id, title, content, cover_image, activity_type, setmeal_price, start_time, end_time, status, is_featured, view_count, create_time, update_time from activities
+    </sql>
+    <select id="selectActivitiesNoNull" parameterType="map" resultMap="ActivitiesMap">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="id != null and id != ''">and id = #{id}</if>
+            <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
+            <if test="content != null and content != ''">and content = #{content}</if>
+            <if test="coverImage != null and coverImage != ''">and cover_image = #{coverImage}</if>
+            <if test="activityType != null and activityType != ''">and activity_type = #{activityType}</if>
+            <if test="setmealPrice != null and setmealPrice != ''">and setmeal_price = #{setmealPrice}</if>
+            <if test="startTime != null">and start_time = #{startTime}</if>
+            <if test="endTime != null">and end_time = #{endTime}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+            <if test="isFeatured != null and isFeatured != ''">and is_featured = #{isFeatured}</if>
+            <if test="viewCount != null and viewCount != ''">and view_count = #{viewCount}</if>
+            <if test="createTime != null">and create_time = #{createTime}</if>
+            <if test="updateTime != null">and update_time = #{updateTime}</if>
+        </where>
+        <!-- 默认排序：优先展示未结束活动 -->
+        <choose>
+            <when test="status != null and status != ''">
+                <!-- 如果有状态筛选，按创建时间倒序 -->
+                ORDER BY create_time DESC
+            </when>
+            <otherwise>
+                <!-- 如果没有状态筛选，优先展示进行中(ACTIVE)和已取消(CANCELLED)的活动，然后是已结束(ENDED)的活动 -->
+                ORDER BY
+                CASE
+                WHEN status = 'ACTIVE' THEN 1
+                WHEN status = 'CANCELLED' THEN 2
+                WHEN status = 'ENDED' THEN 3
+                ELSE 4
+                END,
+                create_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    <select id="countActivitiesNoNull" parameterType="map" resultType="int">
+        select count(*) from activities
+        <where>
+            <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
+            <if test="activityType != null and activityType != ''">and activity_type = #{activityType}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+            <if test="isFeatured != null and isFeatured != ''">and is_featured = #{isFeatured}</if>
+        </where>
+    </select>
+</mapper>

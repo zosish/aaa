@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcate.mapper.ProductsMapper">
+    <resultMap id="ProductsMap" type="com.zrrd.catcate.entity.Products">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="category" jdbcType="VARCHAR" property="category"/>
+        <result column="description" jdbcType="VARCHAR" property="description"/>
+        <result column="price" jdbcType="DECIMAL" property="price"/>
+        <result column="stock_quantity" jdbcType="INTEGER" property="stockQuantity"/>
+        <result column="image_url" jdbcType="VARCHAR" property="imageUrl"/>
+        <result column="brand" jdbcType="VARCHAR" property="brand"/>
+        <result column="specifications" jdbcType="VARCHAR" property="specifications"/>
+        <result column="average_rating" jdbcType="DECIMAL" property="averageRating"/>
+        <result column="is_available" jdbcType="TINYINT" property="isAvailable"/>
+        <result column="sales_count" jdbcType="INTEGER" property="salesCount"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        select id, name, category, description, price, stock_quantity, image_url, brand, specifications, average_rating,
+        is_available, sales_count, create_time, update_time from products
+    </sql>
+    <select id="selectProductsNoNull" parameterType="map" resultMap="ProductsMap">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="id != null and id !=''">and id = #{id}</if>
+            <if test="name != null and name !=''">and name like concat('%', #{name}, '%')</if>
+            <if test="category != null and category !=''">and category = #{category}</if>
+            <if test="description != null and description !=''">and description = #{description}</if>
+            <if test="price != null">and price = #{price}</if>
+            <if test="stockQuantity != null and stockQuantity !=''">and stock_quantity = #{stockQuantity}</if>
+            <if test="imageUrl != null and imageUrl !=''">and image_url = #{imageUrl}</if>
+            <if test="brand != null and brand !=''">and brand = #{brand}</if>
+            <if test="specifications != null and specifications !=''">and specifications = #{specifications}</if>
+            <if test="averageRating != null">and average_rating = #{averageRating}</if>
+            <if test="isAvailable != null and isAvailable != ''">and is_available = #{isAvailable}</if>
+            <if test="salesCount != null and salesCount !=''">and sales_count = #{salesCount}</if>
+            <if test="createTime != null">and create_time = #{createTime}</if>
+            <if test="updateTime != null">and update_time = #{updateTime}</if>
+        </where>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countProductsNoNull" parameterType="com.zrrd.catcate.entity.Products" resultType="int">
+        select count(*) from products
+        <where>
+            <if test="id != null and id !=''">and id = #{id}</if>
+            <if test="name != null and name !=''">and name like concat('%', #{name}, '%')</if>
+            <if test="category != null and category !=''">and category = #{category}</if>
+            <if test="description != null and description !=''">and description = #{}</if>
+        </where>
+    </select>
+</mapper>

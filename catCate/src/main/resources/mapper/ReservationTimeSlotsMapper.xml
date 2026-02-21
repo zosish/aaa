@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zrrd.catcate.mapper.ReservationTimeSlotsMapper">
+    <resultMap id="BaseResultMap" type="com.zrrd.catcate.entity.ReservationTimeSlots">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="time_slot" jdbcType="VARCHAR" property="timeSlot" />
+        <result column="start_time" jdbcType="TIME" property="startTime" />
+        <result column="end_time" jdbcType="TIME" property="endTime" />
+        <result column="sort_order" jdbcType="INTEGER" property="sortOrder" />
+        <result column="max_visitors" jdbcType="INTEGER" property="maxVisitors" />
+        <result column="is_active" jdbcType="TINYINT" property="isActive" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    </resultMap>
+    <sql id="Base_Column_List">
+        select id, time_slot, start_time, end_time, sort_order, max_visitors,
+               is_active, description, create_time, update_time
+        from reservation_time_slots
+    </sql>
+    <select id="selectReservationTimeSlotsNoNull" resultType="com.zrrd.catcate.entity.ReservationTimeSlots">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="id != null and id != ''">and id = #{id}</if>
+            <if test="timeSlot != null and timeSlot != ''">and time_slot like concat('%',#{timeSlot},'%')</if>
+            <if test="startTime != null and startTime != ''">and start_time = #{startTime}</if>
+            <if test="endTime != null and endTime != ''">and end_time = #{endTime}</if>
+            <if test="sortOrder != null and sortOrder != ''">and sort_order = #{sortOrder}</if>
+            <if test="maxVisitors != null and maxVisitors != ''">and max_visitors = #{maxVisitors}</if>
+            <if test="isActive != null and isActive != ''">and is_active = #{isActive}</if>
+            <if test="description != null and description != ''">and description = #{description}</if>
+            <if test="createTime != null">and create_time = #{createTime}</if>
+            <if test="updateTime != null">and update_time = #{updateTime}</if>
+        </where>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    <select id="countReservationTimeSlotsNoNull" resultType="int">
+        select count(*) from reservation_time_slots
+        <where>
+            <if test="timeSlot != null and timeSlot != ''">and time_slot = #{timeSlot}</if>
+            <if test="startTime != null">and start_time = #{startTime}</if>
+            <if test="endTime != null">and end_time = #{endTime}</if>
+            <if test="sortOrder != null">and sort_order = #{sortOrder}</if>
+        </where>
+    </select>
+</mapper>
