@@ -16,9 +16,16 @@
         <template #header>
           <div class="card-header">
             <span>订单信息</span>
-            <el-tag :type="getStatusTagType(orderInfo.orderStatus)">
-              {{ getOrderStatusText(orderInfo.orderStatus) }}
-            </el-tag>
+            <div class="order-actions">
+              <el-tag :type="getStatusTagType(orderInfo.orderStatus)">
+                {{ getOrderStatusText(orderInfo.orderStatus) }}
+              </el-tag>
+              <el-button v-if="canRefund" type="warning" @click="showRefundDialog = true" :disabled="refunding">
+                <el-icon>
+                  <RefreshLeft />
+                </el-icon> 申请退款
+              </el-button>
+            </div>
           </div>
         </template>
 
@@ -128,6 +135,38 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 退款弹窗 -->
+    <el-dialog v-model="showRefundDialog" title="申请退款" width="500px" :before-close="handleRefundClose">
+      <el-form ref="refundFormRef" :model="refundForm" :rules="refundRules" label-width="100px">
+        <el-form-item label="退款金额" prop="refundAmount">
+          <el-input-number v-model="refundForm.refundAmount" :min="0.01" :max="orderInfo.totalAmount" :step="0.01" :precision="2" style="width: 100%" />
+          <div class="form-tip">订单总金额：¥{{ orderInfo.totalAmount }}</div>
+        </el-form-item>
+
+        <el-form-item label="退款原因" prop="refundReason">
+          <el-select v-model="refundForm.refundReason" placeholder="请选择退款原因" style="width: 100%">
+            <el-option label="商品质量问题" value="商品质量问题" />
+            <el-option label="商品与描述不符" value="商品与描述不符" />
+            <el-option label="拍错/不想要了" value="拍错/不想要了" />
+            <el-option label="其他原因" value="其他原因" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="详细说明">
+          <el-input v-model="refundForm.refundDetail" type="textarea" :rows="3" placeholder="请详细描述退款原因（选填）" maxlength="200" show-word-limit />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleRefundClose">取消</el-button>
+          <el-button type="warning" @click="submitRefund" :loading="refunding">
+            提交退款申请
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <!-- eslint-disable no-unused-vars -->
@@ -136,7 +175,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Star, Plus } from '@element-plus/icons-vue';
+import { Star, Plus, RefreshLeft } from '@element-plus/icons-vue';
 import { api } from '@/utils/api';
 import { getUserId, isLoggedIn } from '@/utils/auth';
 
@@ -149,9 +188,13 @@ const showReviewDialog = ref(false);
 const isReviewed = ref(false);
 const existingReview = ref(null);
 const canReview = ref(false);
+const showRefundDialog = ref(false);
+const refunding = ref(false);
+const canRefund = ref(false);
 
 // 表单引用
 const reviewFormRef = ref(null);
+const refundFormRef = ref(null);
 
 // 订单数据
 const orderInfo = ref(null);
@@ -175,6 +218,13 @@ const reviewForm = reactive({
   images: ''
 });
 
+// 退款表单数据
+const refundForm = reactive({
+  refundAmount: 0,
+  refundReason: '',
+  refundDetail: ''
+});
+
 // 表单验证规则
 const reviewRules = {
   rating: [
@@ -183,6 +233,17 @@ const reviewRules = {
   content: [
     { required: true, message: '请输入评价内容', trigger: 'blur' },
     { min: 10, message: '评价内容至少10个字', trigger: 'blur' }
+  ]
+};
+
+// 退款表单验证规则
+const refundRules = {
+  refundAmount: [
+    { required: true, message: '请输入退款金额', trigger: 'blur' },
+    { type: 'number', min: 0.01, message: '退款金额必须大于0', trigger: 'blur' }
+  ],
+  refundReason: [
+    { required: true, message: '请选择退款原因', trigger: 'change' }
   ]
 };
 
@@ -260,6 +321,13 @@ const checkCanReview = () => {
     orderInfo.value.paymentStatus === 'PAID';
 };
 
+// 检查是否可以退款
+const checkCanRefund = () => {
+  if (!orderInfo.value) return false;
+  // 只能对已支付的订单进行退款
+  return orderInfo.value.paymentStatus === 'PAID';
+};
+
 // 检查订单是否已评价
 const checkOrderReviewed = async () => {
   try {
@@ -310,17 +378,23 @@ const loadOrderDetail = async () => {
       }
 
       // 检查评价权限
-      canReview.value = checkCanReview();
+        canReview.value = checkCanReview();
 
-      // 检查是否已评价
-      if (canReview.value) {
-        await checkOrderReviewed();
-        if (isReviewed.value) {
-          await getExistingReview();
+        // 检查是否可以退款
+        canRefund.value = checkCanRefund();
+
+        // 初始化退款表单金额
+        refundForm.refundAmount = orderInfo.value.totalAmount;
+
+        // 检查是否已评价
+        if (canReview.value) {
+          await checkOrderReviewed();
+          if (isReviewed.value) {
+            await getExistingReview();
+          }
         }
-      }
 
-      reviewForm.orderId = orderInfo.value.id;
+        reviewForm.orderId = orderInfo.value.id;
     } else {
       throw new Error(orderResponse?.message || '获取订单详情失败');
     }
@@ -401,6 +475,54 @@ const submitReview = async () => {
   }
 };
 
+// 关闭退款弹窗
+const handleRefundClose = () => {
+  showRefundDialog.value = false;
+  resetRefundForm();
+};
+
+// 重置退款表单
+const resetRefundForm = () => {
+  if (refundFormRef.value) {
+    refundFormRef.value.resetFields();
+  }
+  refundForm.refundAmount = orderInfo.value?.totalAmount || 0;
+  refundForm.refundReason = '';
+  refundForm.refundDetail = '';
+};
+
+// 提交退款申请
+const submitRefund = async () => {
+  if (!refundFormRef.value) return;
+
+  try {
+    await refundFormRef.value.validate();
+
+    refunding.value = true;
+
+    const refundData = {
+      orderNumber: orderInfo.value.orderNumber,
+      refundAmount: refundForm.refundAmount,
+      refundReason: refundForm.refundReason + (refundForm.refundDetail ? ` - ${refundForm.refundDetail}` : '')
+    };
+
+    const response = await api.post('/payment/refund', refundData);
+
+    if (response && response.success) {
+      ElMessage.success('退款申请提交成功！');
+      showRefundDialog.value = false;
+      await loadOrderDetail(); // 重新加载订单详情
+    } else {
+      ElMessage.error(response?.message || '退款申请提交失败');
+    }
+  } catch (error) {
+    console.error('提交退款申请失败:', error);
+    ElMessage.error('退款申请提交失败：' + error.message);
+  } finally {
+    refunding.value = false;
+  }
+};
+
 // 页面初始化
 onMounted(() => {
   if (!isLoggedIn()) {
@@ -443,6 +565,18 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.order-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #795548;
+  margin-top: 5px;
 }
 
 .order-total {

@@ -38,9 +38,9 @@
           <label class="filter-label">商品搜索</label>
           <el-input v-model="searchKeyword" placeholder="请输入商品名称" class="search-input" clearable @clear="onSearchClear"
             @keyup.enter="onSearch">
-            <template #append>
+            <!-- <template #append>
               <el-button icon="Search" @click="onSearch" />
-            </template>
+            </template> -->
           </el-input>
         </div>
       </div>
@@ -133,6 +133,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ShoppingCart, Search } from '@element-plus/icons-vue';
+import { isLoggedIn } from '@/utils/auth';
 
 // 路由实例
 const router = useRouter();
@@ -222,9 +223,9 @@ const filteredProducts = computed(() => {
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.toLowerCase().trim();
     result = result.filter(product =>
-      product.name.toLowerCase().includes(keyword) ||
-      product.description.toLowerCase().includes(keyword) ||
-      product.brand.toLowerCase().includes(keyword)
+      (product.name && product.name.toLowerCase().includes(keyword)) ||
+      (product.description && product.description.toLowerCase().includes(keyword)) ||
+      (product.brand && product.brand.toLowerCase().includes(keyword))
     );
   }
 

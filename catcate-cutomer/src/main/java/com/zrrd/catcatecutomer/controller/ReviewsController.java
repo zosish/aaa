@@ -22,7 +22,7 @@ import java.util.Map;
  */
 @RestController
 @CrossOrigin(value = "*")
-@RequestMapping("/catcatecutomer/reviews")
+@RequestMapping("/reviews")
 public class ReviewsController {
 
     @Resource

@@ -125,7 +125,7 @@ const loadOrders = async () => {
 
 // 查看订单详情
 const viewOrderDetail = (order) => {
-  router.push(`/order-detail?orderNumber=${order.orderNumber}`);
+  router.push(`/OrderDetailPage?orderNumber=${order.orderNumber}`);
 };
 
 // 取消订单

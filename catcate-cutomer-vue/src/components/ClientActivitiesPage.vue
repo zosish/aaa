@@ -13,12 +13,16 @@
         v-model="searchKeyword"
         placeholder="搜索活动标题或内容..."
         clearable
-        prefix-icon="Search"
         class="search-input"
         @keyup.enter="searchActivities"
       >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
         <template #append>
-          <el-button icon="Search" @click="searchActivities"></el-button>
+          <el-button @click="searchActivities">
+            <el-icon><Search /></el-icon>
+          </el-button>
         </template>
       </el-input>
       
@@ -89,8 +93,8 @@
           </div>
           
           <div class="activity-content">
-            <h3 class="activity-title">{{ activity.title }}</h3>
-            <p class="activity-description">{{ activity.content }}</p>
+            <h3 class="activity-title">{{ activity.title || '无标题' }}</h3>
+            <p class="activity-description">{{ activity.content || '无内容' }}</p>
             
             <div class="activity-meta">
               <div class="time-info">

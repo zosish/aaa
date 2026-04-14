@@ -1,0 +1,232 @@
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(100) NOT NULL COMMENT '密码',
+    email VARCHAR(100) COMMENT '邮箱',
+    phone VARCHAR(20) COMMENT '手机号',
+    role VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER' COMMENT '角色：ADMIN-管理员, CUSTOMER-顾客',
+    nickname VARCHAR(50) COMMENT '昵称',
+    avatar VARCHAR(200) COMMENT '头像URL',
+    status VARCHAR(20) DEFAULT 'ACTIVE' COMMENT '状态：ACTIVE-活跃, INACTIVE-禁用',
+    last_login_time DATETIME COMMENT '最后登录时间',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '用户信息表';
+-- 角色表
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '角色ID',
+    role_name VARCHAR(50) NOT NULL COMMENT '角色名称（如：超级管理员）',
+    role_code VARCHAR(50) NOT NULL COMMENT '角色编码（如：SUPER_ADMIN）',
+    description VARCHAR(200) COMMENT '角色描述',
+    is_active TINYINT DEFAULT 1 COMMENT '是否启用：1-是, 0-否',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '角色表';
+-- 权限表
+CREATE TABLE permissions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '权限ID',
+    permission_name VARCHAR(50) NOT NULL COMMENT '权限名称（如：用户管理-查看）',
+    permission_code VARCHAR(100) NOT NULL COMMENT '权限编码（如：sys:user:list）',
+    permission_type VARCHAR(20) DEFAULT 'MENU' COMMENT '权限类型：MENU-菜单, BUTTON-按钮, API-接口',
+    parent_id BIGINT COMMENT '父权限ID（用于菜单层级）',
+    path VARCHAR(200) COMMENT '权限对应路径（如菜单URL）',
+    icon VARCHAR(200) COMMENT '菜单图标',
+    sort_order INT DEFAULT 0 COMMENT '排序字段',
+    is_active TINYINT DEFAULT 1 COMMENT '是否启用：1-是, 0-否',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '权限表';
+-- 角色权限关联表
+CREATE TABLE role_permissions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '关联ID',
+    role_id BIGINT NOT NULL COMMENT '角色ID',
+    permission_id BIGINT NOT NULL COMMENT '权限ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+) COMMENT '角色权限关联表';
+-- 用户角色关联表
+CREATE TABLE user_roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '关联ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    role_id BIGINT NOT NULL COMMENT '角色ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+) COMMENT '用户角色关联表';
+CREATE TABLE cats (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '猫咪ID',
+    name VARCHAR(50) NOT NULL COMMENT '猫咪名字',
+    breed VARCHAR(50) COMMENT '品种',
+    age INT COMMENT '年龄（月）',
+    gender VARCHAR(10) COMMENT '性别：MALE-公, FEMALE-母',
+    health_status VARCHAR(20) DEFAULT 'HEALTHY' COMMENT '健康状况：HEALTHY-健康, SICK-生病, RECOVERING-恢复中',
+    personality VARCHAR(200) COMMENT '性格描述',
+    photo_url VARCHAR(200) COMMENT '照片URL',
+    adoption_status VARCHAR(20) DEFAULT 'AVAILABLE' COMMENT '领养状态：AVAILABLE-可领养, ADOPTED-已被领养, UNAVAILABLE-不可领养',
+    daily_care TEXT COMMENT '日常护理信息',
+    is_active TINYINT DEFAULT 1 COMMENT '是否活跃：1-是, 0-否',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '猫咪信息表';
+CREATE TABLE cat_health_records (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '记录ID',
+    cat_id BIGINT NOT NULL COMMENT '猫咪ID',
+    check_date DATE NOT NULL COMMENT '检查日期',
+    health_status VARCHAR(20) NOT NULL COMMENT '健康状态：HEALTHY-健康, SICK-生病, RECOVERING-恢复中',
+    symptoms TEXT COMMENT '症状名字和描述',
+    treatment TEXT COMMENT '处理措施',
+    checker VARCHAR(50) NOT NULL COMMENT '检查人员',
+    remark TEXT COMMENT '备注信息',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+) COMMENT '猫咪健康记录表';
+-- 购物车表
+CREATE TABLE shopping_cart (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '购物车项ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    product_id BIGINT NOT NULL COMMENT '商品ID',
+    quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_user_product (user_id, product_id) COMMENT '用户和商品唯一索引，防止重复添加',
+    KEY idx_user_id (user_id) COMMENT '用户ID索引',
+    KEY idx_product_id (product_id) COMMENT '商品ID索引'
+) COMMENT='购物车表';
+CREATE TABLE reservations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '预约ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    cat_id BIGINT NOT NULL COMMENT '猫咪ID',
+    reservation_date DATE NOT NULL COMMENT '预约日期',
+    time_slot VARCHAR(50) NOT NULL COMMENT '时间段',
+    visitor_count INT DEFAULT 1 COMMENT '访客人数',
+    purpose VARCHAR(200) COMMENT '预约目的',
+    status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态：PENDING-待确认, CONFIRMED-已确认, CANCELLED-已取消, COMPLETED-已完成',
+    admin_notes TEXT COMMENT '管理员备注',
+    user_notes TEXT COMMENT '用户备注',
+    cancel_reason VARCHAR(200) COMMENT '取消原因',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '预约记录表';
+CREATE TABLE reservation_time_slots (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '时段ID',
+    time_slot VARCHAR(50) NOT NULL COMMENT '时间段，例如：09:00-10:00',
+    start_time TIME NOT NULL COMMENT '开始时间',
+    end_time TIME NOT NULL COMMENT '结束时间',
+    sort_order INT DEFAULT 0 COMMENT '排序字段',
+    max_visitors INT NOT NULL DEFAULT 10 COMMENT '该时段最大可预约人数',
+    is_active TINYINT DEFAULT 1 COMMENT '是否启用：1-是, 0-否',
+    description VARCHAR(200) COMMENT '时段描述',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '预约时段设置表';
+CREATE TABLE products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '商品ID',
+    name VARCHAR(100) NOT NULL COMMENT '商品名称',
+    category VARCHAR(50) NOT NULL COMMENT '分类：FOOD-食品, TOY-玩具, SUPPLIES-用品, OTHER-其他',
+    description TEXT COMMENT '商品描述',
+    price DECIMAL(10,2) NOT NULL COMMENT '价格',
+    stock_quantity INT NOT NULL DEFAULT 0 COMMENT '库存数量',
+    image_url VARCHAR(200) COMMENT '商品图片URL',
+    brand VARCHAR(50) COMMENT '品牌',
+    specifications TEXT COMMENT '规格参数',
+		average_rating DECIMAL(3,2) DEFAULT 0.00 COMMENT '平均评分（0-5分，保留2位小数）',
+    is_available TINYINT DEFAULT 1 COMMENT '是否上架：1-是, 0-否',
+    sales_count INT DEFAULT 0 COMMENT '销售数量',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '商品信息表';
+CREATE TABLE product_categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '分类ID',
+    name VARCHAR(50) NOT NULL COMMENT '分类名称',
+    code VARCHAR(50) NOT NULL UNIQUE COMMENT '分类代码（英文标识）',
+    description TEXT COMMENT '分类描述',
+    icon VARCHAR(200) COMMENT '分类图标URL',
+    sort_order INT DEFAULT 0 COMMENT '排序字段',
+    parent_id BIGINT DEFAULT NULL COMMENT '父分类ID',
+    is_active TINYINT DEFAULT 1 COMMENT '是否启用：1-是, 0-否',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT='商品分类表';
+CREATE TABLE orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '订单ID',
+    order_number VARCHAR(50) NOT NULL UNIQUE COMMENT '订单编号',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    total_amount DECIMAL(10,2) NOT NULL COMMENT '订单总金额',
+    payment_status VARCHAR(20) DEFAULT 'PENDING' COMMENT '支付状态：PENDING-待支付, PAID-已支付, FAILED-支付失败, REFUNDED-已退款',
+    payment_method VARCHAR(20) COMMENT '支付方式：ALIPAY-支付宝, WECHAT-微信',
+    payment_time DATETIME COMMENT '支付时间',
+    transaction_id VARCHAR(100) COMMENT '第三方支付交易ID',
+    shipping_address TEXT COMMENT '收货地址',
+    order_status VARCHAR(20) DEFAULT 'PENDING' COMMENT '订单状态：PENDING-待处理, PROCESSING-处理中, SHIPPED-已发货, COMPLETED-已完成, CANCELLED-已取消',
+    customer_notes TEXT COMMENT '顾客备注',
+    admin_notes TEXT COMMENT '管理员备注',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '订单主表';
+CREATE TABLE order_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '订单项ID',
+    order_id BIGINT NOT NULL COMMENT '订单ID',
+    product_id BIGINT NOT NULL COMMENT '商品ID',
+    product_name VARCHAR(100) NOT NULL COMMENT '商品名称（下单时的快照）',
+    product_price DECIMAL(10,2) NOT NULL COMMENT '商品单价（下单时的快照）',
+    quantity INT NOT NULL COMMENT '购买数量',
+    subtotal DECIMAL(10,2) NOT NULL COMMENT '小计金额',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+) COMMENT '订单商品明细表';
+CREATE TABLE activities (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '活动ID',
+    title VARCHAR(100) NOT NULL COMMENT '活动标题',
+    content TEXT NOT NULL COMMENT '活动内容',
+    cover_image VARCHAR(200) COMMENT '封面图片URL',
+    activity_type VARCHAR(50) COMMENT '活动类型：DISCOUNT-折扣, EVENT-活动, PROMOTION-促销,SETMEAL-套餐',
+		setmeal_price DECIMAL(10,2) COMMENT '套餐价格（仅当activity_type为SETMEAL时有意义）',
+    start_time DATETIME NOT NULL COMMENT '开始时间',
+    end_time DATETIME NOT NULL COMMENT '结束时间',
+    status VARCHAR(20) DEFAULT 'ACTIVE' COMMENT '状态：ACTIVE-进行中, ENDED-已结束, CANCELLED-已取消',
+    is_featured TINYINT DEFAULT 0 COMMENT '是否推荐：1-是, 0-否',
+    view_count INT DEFAULT 0 COMMENT '浏览次数',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '活动信息表';
+
+CREATE TABLE reviews (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '评价ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    target_type VARCHAR(20) NOT NULL COMMENT '评价对象类型：CAT-猫咪, PRODUCT-商品, SERVICE-服务',
+    target_id BIGINT NOT NULL COMMENT '评价对象ID',
+    order_id BIGINT COMMENT '关联订单ID',
+    rating INT NOT NULL COMMENT '评分（1-5分）',
+    content TEXT COMMENT '评价内容',
+    images TEXT COMMENT '评价图片URL（多个用逗号分隔）',
+    is_anonymous TINYINT DEFAULT 0 COMMENT '是否匿名：1-是, 0-否',
+    status VARCHAR(20) DEFAULT 'APPROVED' COMMENT '状态：PENDING-待审核, APPROVED-已通过, REJECTED-已拒绝',
+    admin_reply TEXT COMMENT '管理员回复',
+    like_count INT DEFAULT 0 COMMENT '点赞数',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '评价表';
+-- 收货地址表
+CREATE TABLE addresses (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    receiver_name VARCHAR(50) NOT NULL COMMENT '收货人姓名',
+    phone VARCHAR(20) NOT NULL COMMENT '手机号码',
+    province VARCHAR(50) NOT NULL COMMENT '省份',
+    city VARCHAR(50) NOT NULL COMMENT '城市',
+    district VARCHAR(50) NOT NULL COMMENT '区县',
+    detail_address VARCHAR(200) NOT NULL COMMENT '详细地址',
+    is_default TINYINT DEFAULT 0 COMMENT '是否默认地址：0-否, 1-是',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_user_id (user_id)
+) COMMENT '收货地址表';
+
+-- 收藏表
+CREATE TABLE favorites (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    target_type VARCHAR(20) NOT NULL COMMENT '收藏对象类型：PRODUCT-商品, CAT-猫咪',
+    target_id BIGINT NOT NULL COMMENT '收藏对象ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY uk_user_target (user_id, target_type, target_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_target (target_type, target_id)
+) COMMENT '收藏表';
+ALTER TABLE users MODIFY COLUMN avatar TEXT;

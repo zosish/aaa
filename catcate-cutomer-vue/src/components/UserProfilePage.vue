@@ -867,7 +867,7 @@ const loadAddresses = async () => {
 
 // 查看订单详情
 const viewOrderDetail = (order) => {
-  router.push(`/order-detail?orderNumber=${order.orderNumber}`);
+  router.push(`/OrderDetailPage?orderNumber=${order.orderNumber}`);
 };
 
 // 查看预约详情

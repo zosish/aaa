@@ -40,4 +40,14 @@ public interface IPaymentService {
      */
     boolean closeOrder(String orderNumber) throws AlipayApiException;
 
+    /**
+     * 退款
+     * @param orderNumber 订单编号
+     * @param refundAmount 退款金额
+     * @param refundReason 退款原因
+     * @return 退款结果
+     * @throws AlipayApiException 支付宝API异常
+     */
+    boolean refund(String orderNumber, BigDecimal refundAmount, String refundReason) throws AlipayApiException;
+
 }

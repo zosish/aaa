@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/catcatecutomer/payment")
+@RequestMapping("/payment")
 @CrossOrigin("*")
 public class PaymentController {
 
@@ -253,6 +253,70 @@ public class PaymentController {
         } catch (AlipayApiException e) {
             logger.error("关闭订单失败", e);
             return "{\"error\":\"" + e.getMessage() + "\"}";
+        }
+    }
+
+    /**
+     * 退款
+     */
+    @PostMapping("/refund")
+    public String refund(@RequestBody Map<String, Object> requestData) {
+        try {
+            String orderNumber = (String) requestData.get("orderNumber");
+            BigDecimal refundAmount = new BigDecimal(requestData.get("refundAmount").toString());
+            String refundReason = (String) requestData.get("refundReason");
+
+            logger.info("发起退款请求 - 订单号: {}, 退款金额: {}, 退款原因: {}", orderNumber, refundAmount, refundReason);
+
+            // 检查订单是否存在
+            Orders order = ordersService.getOne(new QueryWrapper<Orders>().eq("order_number", orderNumber));
+            if (order == null) {
+                logger.error("订单不存在: {}", orderNumber);
+                return "{\"success\":false,\"message\":\"订单不存在\"}";
+            }
+
+            // 检查订单状态
+            if (!"PAID".equals(order.getPaymentStatus())) {
+                logger.warn("订单状态不正确 - 订单号: {}, 当前状态: {}", orderNumber, order.getPaymentStatus());
+                return "{\"success\":false,\"message\":\"只有已支付的订单才能退款\"}";
+            }
+
+            // 检查是否有交易号
+            if (order.getTransactionId() == null || order.getTransactionId().isEmpty()) {
+                logger.warn("订单没有交易号 - 订单号: {}", orderNumber);
+                return "{\"success\":false,\"message\":\"该订单没有实际支付记录，无法退款\"}";
+            }
+
+            // 检查退款金额
+            if (refundAmount.compareTo(order.getTotalAmount()) > 0) {
+                logger.warn("退款金额超过订单金额 - 订单号: {}, 订单金额: {}, 退款金额: {}", orderNumber, order.getTotalAmount(), refundAmount);
+                return "{\"success\":false,\"message\":\"退款金额不能超过订单金额\"}";
+            }
+
+            boolean result = paymentService.refund(orderNumber, refundAmount, refundReason);
+            if (result) {
+                return "{\"success\":true,\"message\":\"退款成功\"}";
+            } else {
+                return "{\"success\":false,\"message\":\"退款失败\"}";
+            }
+        } catch (AlipayApiException e) {
+            logger.error("退款失败", e);
+            // 检查错误信息是否包含交易不存在
+            if (e.getMessage().contains("ACQ.TRADE_NOT_EXIST")) {
+                return "{\"success\":false,\"message\":\"交易不存在，可能是因为该订单没有实际支付或者支付记录已过期\"}";
+            }
+            // 检查是否是网络错误
+            if (e.getMessage().contains("UnknownHostException") || e.getMessage().contains("NoRouteToHostException") || e.getMessage().contains("网络") || e.getMessage().contains("No route to host")) {
+                return "{\"success\":false,\"message\":\"网络连接失败，请检查网络连接后重试\"}";
+            }
+            return "{\"success\":false,\"message\":\"退款失败: " + e.getMessage() + "\"}";
+        } catch (Exception e) {
+            logger.error("退款请求处理失败", e);
+            // 检查是否是网络错误
+            if (e.getMessage().contains("UnknownHostException") || e.getMessage().contains("NoRouteToHostException") || e.getMessage().contains("网络") || e.getMessage().contains("No route to host")) {
+                return "{\"success\":false,\"message\":\"网络连接失败，请检查网络连接后重试\"}";
+            }
+            return "{\"success\":false,\"message\":\"退款请求处理失败: " + e.getMessage() + "\"}";
         }
     }
 }

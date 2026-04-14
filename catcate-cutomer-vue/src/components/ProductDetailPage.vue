@@ -704,6 +704,15 @@ const confirmAddress = async () => {
           paymentWindow.document.write(paymentHtml);
           paymentWindow.document.close();
           ElMessage.success('正在跳转到支付页面...');
+          
+          // 监听支付窗口关闭事件，跳转到支付成功页面
+          const checkPaymentWindow = setInterval(() => {
+            if (paymentWindow.closed) {
+              clearInterval(checkPaymentWindow);
+              // 跳转到支付成功页面
+              router.push(`/PaymentSuccessfulPage?orderNumber=${orderResponse.data.orderNumber}`);
+            }
+          }, 1000);
         } else {
           throw new Error('支付响应格式不正确');
         }

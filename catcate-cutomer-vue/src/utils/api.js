@@ -12,6 +12,23 @@ const BASE_URL = 'http://localhost:8083/catcatecutomer';
 export async function apiRequest(url, options = {}) {
   const token = getToken();
   
+  // 处理查询参数
+  let requestUrl = url;
+  if (options.params) {
+    const params = new URLSearchParams();
+    Object.entries(options.params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, value);
+      }
+    });
+    const paramsString = params.toString();
+    if (paramsString) {
+      requestUrl = `${url}${url.includes('?') ? '&' : '?'}${paramsString}`;
+    }
+    // 删除params属性，避免传递给fetch
+    delete options.params;
+  }
+  
   const config = {
     method: 'GET',
     headers: {
@@ -23,7 +40,7 @@ export async function apiRequest(url, options = {}) {
   };
 
   try {
-    const response = await fetch(`${BASE_URL}${url}`, config);
+    const response = await fetch(`${BASE_URL}${requestUrl}`, config);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,13 +57,34 @@ export async function apiRequest(url, options = {}) {
       if (result.code === 200) {
         // 返回包含所有数据的对象，让调用者决定使用哪个字段
         return result;
+      } else if (result.success !== undefined) {
+        // 处理包含success字段的响应格式
+        if (result.success) {
+          return result;
+        } else {
+          throw new Error(result.message || '请求失败');
+        }
       } else {
         throw new Error(result.message || '请求失败');
       }
     } else {
-      // 非JSON响应（如HTML表单），直接返回文本内容
+      // 非JSON响应（如HTML表单或text/plain），尝试解析为JSON
       const text = await response.text();
-      return text;
+      try {
+        // 尝试解析为JSON
+        const result = JSON.parse(text);
+        if (result.success !== undefined) {
+          if (result.success) {
+            return result;
+          } else {
+            throw new Error(result.message || '请求失败');
+          }
+        }
+        return text;
+      } catch (e) {
+        // 解析失败，直接返回文本
+        return text;
+      }
     }
   } catch (error) {
     console.error('API请求失败:', error);

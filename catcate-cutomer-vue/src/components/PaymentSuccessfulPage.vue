@@ -15,7 +15,7 @@
             <p><strong>支付方式：</strong><span class="payment-method">{{ orderInfo.paymentMethod }}</span></p>
           </div>
           
-          <div class="order-details" v-if="orderItems.length > 0">
+          <div class="OrderDetailPage" v-if="orderItems.length > 0">
             <h3>订单商品</h3>
             <div class="item-list">
               <div v-for="item in orderItems" :key="item.id" class="order-item">
@@ -67,6 +67,9 @@ onMounted(async () => {
         paymentMethod: '支付宝'
       };
       
+      // 查询订单详情，获取订单商品列表
+      await getOrderDetails(orderNumber);
+      
       ElMessage.success('支付成功！');
     } catch (error) {
       console.error('处理支付成功信息失败:', error);
@@ -77,9 +80,42 @@ onMounted(async () => {
   }
 });
 
+// 获取订单详情
+const getOrderDetails = async (orderNumber) => {
+  try {
+    const response = await api.get(`/orders/detail/${orderNumber}`);
+    if (response && response.code === 200) {
+      const orderData = response.data;
+      // 更新订单信息
+      if (orderData) {
+        orderInfo.value = {
+          orderNumber: orderData.orderNumber,
+          amount: orderData.totalAmount || orderInfo.value.amount,
+          payTime: orderData.paymentTime || orderInfo.value.payTime,
+          paymentMethod: orderData.paymentMethod || '支付宝'
+        };
+        
+        // 处理订单商品
+        if (orderData.orderItems && orderData.orderItems.length > 0) {
+          orderItems.value = orderData.orderItems.map(item => ({
+            id: item.id,
+            name: item.productName,
+            image: item.productImage,
+            price: item.price,
+            quantity: item.quantity
+          }));
+        }
+      }
+    }
+  } catch (error) {
+    console.error('获取订单详情失败:', error);
+    // 不影响页面显示，使用默认数据
+  }
+};
+
 const viewOrder = () => {
   if (orderInfo.value && orderInfo.value.orderNumber) {
-    router.push(`/order-detail?orderNumber=${orderInfo.value.orderNumber}`);
+    router.push(`/OrderDetailPage?orderNumber=${orderInfo.value.orderNumber}`);
   } else {
     ElMessage.info('订单详情功能待开发');
   }
@@ -139,11 +175,11 @@ const goToHomepage = () => {
   font-weight: 500;
 }
 
-.order-details {
+.OrderDetailPage {
   margin: 30px 0;
 }
 
-.order-details h3 {
+.OrderDetailPage h3 {
   color: #5d4037;
   margin-bottom: 20px;
   text-align: center;

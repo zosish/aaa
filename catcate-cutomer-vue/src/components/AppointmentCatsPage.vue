@@ -32,7 +32,7 @@
             <div class="cat-details">
               <h2>{{ selectedCat.name }}</h2>
               <div class="cat-desc">
-                <span class="breed">{{ selectedCat.breed }}</span>
+                <span class="breed">品种: {{ selectedCat.breed }}</span>
                 <span>年龄: {{ formatAge(selectedCat.age) }}</span>
                 <span>性别: {{ selectedCat.gender === 'MALE' ? '公' : '母' }}</span>
               </div>
@@ -228,7 +228,7 @@ onMounted(() => {
 // 图片URL处理函数
 const getProcessedCatImageUrl = (url) => {
   if (!url) {
-    return null;
+    return defaultCatImage;
   }
   
   // 如果已经是完整URL，直接返回
@@ -236,14 +236,27 @@ const getProcessedCatImageUrl = (url) => {
     return url;
   }
   
-  // 处理相对路径
-  if (url.startsWith('/')) {
-    return `http://localhost:8083${url}`;
-  } else if (url.startsWith('uploads/')) {
-    return `http://localhost:8083/${url}`;
+  // 处理不同类型的路径
+  let processedUrl;
+  
+  if (url.startsWith('/uploads/cats/')) {
+    // 已经是正确的上传路径格式 - 指向管理员端
+    processedUrl = `http://localhost:8081${url}`;
+  } else if (url.startsWith('uploads/cats/')) {
+    // 缺少开头斜杠
+    processedUrl = `http://localhost:8081/${url}`;
+  } else if (url.startsWith('/cats/')) {
+    // cats目录下的图片
+    processedUrl = `http://localhost:8081${url}`;
+  } else if (url.startsWith('cats/')) {
+    // cats目录下的图片（缺少斜杠）
+    processedUrl = `http://localhost:8081/${url}`;
   } else {
-    return `http://localhost:8083/${url}`;
+    // 其他情况，尝试作为相对路径处理
+    processedUrl = `http://localhost:8081/${url}`;
   }
+  
+  return processedUrl;
 };
 
 // 获取猫咪详情

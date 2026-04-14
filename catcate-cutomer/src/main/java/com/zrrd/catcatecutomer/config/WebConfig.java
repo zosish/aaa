@@ -1,4 +1,4 @@
-package com.zrrd.catcate.config;
+package com.zrrd.catcatecutomer.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

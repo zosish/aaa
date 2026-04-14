@@ -70,18 +70,19 @@ const routes = [
     name: 'OrderDetailPage',
     component: () => import('@/components/OrderDetailPage.vue')
   },
+// 订单详情查看页面
+  {
+    path: '/order-detail',
+    name: 'OrderDetailView',
+    component: () => import('@/components/OrderDetailView.vue')
+  },
   // 我的订单页面
   {
     path: '/my-orders',
     name: 'MyOrders',
     component: () => import('@/components/MyOrdersPage.vue')
   },
-  // 订单详情查看页面
-  {
-    path: '/order-detail',
-    name: 'OrderDetailView',
-    component: () => import('@/components/OrderDetailView.vue')
-  },
+  
   // 个人中心页面
   {
     path: '/profile',

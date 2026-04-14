@@ -8,8 +8,10 @@ import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradeCloseRequest;
 import com.alipay.api.request.AlipayTradePagePayRequest;
 import com.alipay.api.request.AlipayTradeQueryRequest;
+import com.alipay.api.request.AlipayTradeRefundRequest;
 import com.alipay.api.response.AlipayTradeCloseResponse;
 import com.alipay.api.response.AlipayTradeQueryResponse;
+import com.alipay.api.response.AlipayTradeRefundResponse;
 import com.zrrd.catcatecutomer.config.AlipayConfig;
 import com.zrrd.catcatecutomer.entity.Orders;
 import com.zrrd.catcatecutomer.service.IOrdersService;
@@ -166,5 +168,42 @@ public class PaymentServiceImpl implements IPaymentService {
 
         AlipayTradeCloseResponse response = alipayClient.execute(request);
         return response.isSuccess();
+    }
+
+    @Override
+    public boolean refund(String orderNumber, java.math.BigDecimal refundAmount, String refundReason) throws AlipayApiException {
+        AlipayClient alipayClient = new DefaultAlipayClient(
+                alipayConfig.getGatewayUrl(),
+                alipayConfig.getAppId(),
+                alipayConfig.getMerchantPrivateKey(),
+                alipayConfig.getFormat(),
+                alipayConfig.getCharset(),
+                alipayConfig.getAlipayPublicKey(),
+                alipayConfig.getSignType()
+        );
+
+        AlipayTradeRefundRequest request = new AlipayTradeRefundRequest();
+        request.setBizContent("{" +
+                "\"out_trade_no\":\"" + orderNumber + "\","
+                + "\"refund_amount\":\"" + refundAmount + "\","
+                + "\"refund_reason\":\"" + refundReason + "\""
+                + "}");
+
+        AlipayTradeRefundResponse response = alipayClient.execute(request);
+        if (response.isSuccess()) {
+            // 退款成功，更新订单状态
+            boolean updateResult = ordersService.updatePaymentStatus(orderNumber, "REFUNDED", response.getTradeNo(), "ALIPAY");
+            logger.info("订单退款成功: {}", orderNumber);
+            return updateResult;
+        } else {
+            // 检查错误码
+            String subCode = response.getSubCode();
+            if ("ACQ.TRADE_NOT_EXIST".equals(subCode)) {
+                logger.error("订单退款失败: {}, 原因: 交易不存在，可能是因为该订单没有实际支付或者支付记录已过期", orderNumber);
+            } else {
+                logger.error("订单退款失败: {}, 原因: {}", orderNumber, response.getMsg());
+            }
+            return false;
+        }
     }
 }

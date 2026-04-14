@@ -43,9 +43,9 @@
           </div>
           <div class="activity-card-content">
             <p class="slot-desc">{{ activity.content }}</p>
-            <div class="package-info">
-              <!-- <span class="duration"><el-icon><Clock /></el-icon> {{ calculateDuration(activity.startTime, activity.endTime) }}</span> -->
-            </div>
+            <!-- <div class="package-info">
+              <span class="duration"><el-icon><Clock /></el-icon> {{ calculateDuration(activity.startTime, activity.endTime) }}</span>
+            </div> -->
             <ul class="activity-benefits">
               <li><el-icon><Check /></el-icon> 专业人员陪同</li>
               <li><el-icon><Check /></el-icon> 免费饮品一杯</li>
@@ -68,14 +68,73 @@
       </div>
     </section>
 
+    <!-- 选择预约时间弹窗 -->
+    <el-dialog v-model="showTimeSelectionDialog" title="选择预约时间" width="500px" :close-on-click-modal="false">
+      <div v-if="selectedPackage" class="time-selection">
+        <div class="package-summary">
+          <h3>{{ selectedPackage.title }}</h3>
+          <p class="price">价格：¥{{ selectedPackage.setmealPrice }}</p>
+        </div>
+        
+        <el-form ref="timeFormRef" :model="timeForm" :rules="timeRules" label-width="80px">
+          <el-form-item label="预约日期" prop="reservationDate">
+            <el-date-picker
+              v-model="timeForm.reservationDate"
+              type="date"
+              placeholder="请选择预约日期"
+              :disabled-date="disabledDate"
+              style="width: 100%"
+              value-format="YYYY-MM-DD"
+            />
+          </el-form-item>
+          
+          <el-form-item label="预约时间" prop="reservationTime">
+            <el-time-picker
+              v-model="timeForm.reservationTime"
+              placeholder="请选择预约时间"
+              format="HH:mm"
+              value-format="HH:mm"
+              style="width: 100%"
+            />
+          </el-form-item>
+          
+          <el-form-item label="备注信息">
+            <el-input
+              v-model="timeForm.notes"
+              type="textarea"
+              placeholder="如有特殊需求请在此说明（选填）"
+              :rows="3"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showTimeSelectionDialog = false">取消</el-button>
+          <el-button 
+            type="primary" 
+            @click="confirmTimeSelection" 
+            :loading="timeSelecting"
+          >
+            确认预约时间
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- 套餐支付弹窗 -->
     <el-dialog v-model="showPaymentDialog" title="套餐支付" width="500px">
       <div v-if="selectedPackage" class="package-payment">
         <div class="package-info">
           <h3>{{ selectedPackage.title }}</h3>
           <p>{{ selectedPackage.content }}</p>
+          <div class="reservation-summary">
+            <p><strong>预约日期：</strong>{{ confirmedReservation.reservationDate }}</p>
+            <p><strong>预约时间：</strong>{{ confirmedReservation.reservationTime }}</p>
+            <p v-if="confirmedReservation.notes"><strong>备注：</strong>{{ confirmedReservation.notes }}</p>
+          </div>
           <div class="package-meta">
-            <!-- <span class="duration"><el-icon><Clock /></el-icon> {{ calculateDuration(selectedPackage.startTime, selectedPackage.endTime) }}</span> -->
             <span class="price">¥{{ selectedPackage.setmealPrice }}</span>
           </div>
         </div>
@@ -107,9 +166,8 @@
   </div>
 </template>
 <!-- eslint-disable no-unused-vars -->
-
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Check, Clock } from '@element-plus/icons-vue';
@@ -121,11 +179,15 @@ const router = useRouter();
 
 // 状态管理
 const selectingPackage = ref(false);
+const timeSelecting = ref(false);
 const paymentLoading = ref(false);
+const showTimeSelectionDialog = ref(false);
 const showPaymentDialog = ref(false);
+const showSuccessDialog = ref(false);
 const selectedPackage = ref(null);
 const loadingPackages = ref(false);
 const selectedPaymentMethod = ref('ALIPAY');
+const orderNumber = ref('');
 
 // 登录状态检查
 const isLogin = ref(isLoggedIn());
@@ -133,6 +195,32 @@ const currentUserId = ref(getUserId());
 
 // 数据列表
 const packageActivities = ref([]);
+
+// 时间选择表单
+const timeFormRef = ref(null);
+const timeForm = reactive({
+  reservationDate: '',
+  reservationTime: '',
+  duration: 60,
+  notes: ''
+});
+
+// 确认的预约信息
+const confirmedReservation = reactive({
+  reservationDate: '',
+  reservationTime: '',
+  notes: ''
+});
+
+// 表单验证规则
+const timeRules = reactive({
+  reservationDate: [
+    { required: true, message: '请选择预约日期', trigger: 'change' }
+  ],
+  reservationTime: [
+    { required: true, message: '请选择预约时间', trigger: 'change' }
+  ]
+});
 
 // 生命周期
 onMounted(() => {
@@ -195,23 +283,30 @@ const loadPackageActivities = async () => {
   }
 };
 
-// 计算活动时长
-const calculateDuration = (startTime, endTime) => {
-  if (!startTime || !endTime) return '未知时长';
+// // 计算活动时长
+// const calculateDuration = (startTime, endTime) => {
+//   if (!startTime || !endTime) return '未知时长';
   
-  try {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const diffHours = (end - start) / (1000 * 60 * 60);
+//   try {
+//     const start = new Date(startTime);
+//     const end = new Date(endTime);
+//     const diffHours = (end - start) / (1000 * 60 * 60);
     
-    if (diffHours >= 1) {
-      return `${Math.floor(diffHours)}小时${(diffHours % 1) * 60 > 0 ? Math.round((diffHours % 1) * 60) + '分钟' : ''}`;
-    } else {
-      return `${Math.round(diffHours * 60)}分钟`;
-    }
-  } catch (error) {
-    return '未知时长';
-  }
+//     if (diffHours >= 1) {
+//       return `${Math.floor(diffHours)}小时${(diffHours % 1) * 60 > 0 ? Math.round((diffHours % 1) * 60) + '分钟' : ''}`;
+//     } else {
+//       return `${Math.round(diffHours * 60)}分钟`;
+//     }
+//   } catch (error) {
+//     return '未知时长';
+//   }
+// };
+
+// 禁用过去日期
+const disabledDate = (date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date.getTime() < today.getTime();
 };
 
 // 选择套餐
@@ -225,12 +320,35 @@ const selectPackage = async (packageActivity) => {
   selectingPackage.value = true;
   try {
     selectedPackage.value = packageActivity;
-    showPaymentDialog.value = true;
+    // 重置表单
+    Object.assign(timeForm, {
+      reservationDate: '',
+      reservationTime: '',
+      duration: 60,
+      notes: ''
+    });
+    showTimeSelectionDialog.value = true;
   } catch (error) {
     ElMessage.error('选择套餐失败');
     console.error(error);
   } finally {
     selectingPackage.value = false;
+  }
+};
+
+// 确认预约时间
+const confirmTimeSelection = async () => {
+  if (!timeFormRef.value) return;
+  
+  try {
+    await timeFormRef.value.validate();
+    
+    // 保存预约信息
+    Object.assign(confirmedReservation, timeForm);
+    showTimeSelectionDialog.value = false;
+    showPaymentDialog.value = true;
+  } catch (error) {
+    ElMessage.error('请完善预约信息');
   }
 };
 
@@ -247,14 +365,14 @@ const proceedToPayment = async () => {
     const orderData = {
       userId: currentUserId.value,
       totalAmount: selectedPackage.value.setmealPrice,
-      customerNotes: `套餐预约：${selectedPackage.value.title}`,
+      customerNotes: `套餐预约：${selectedPackage.value.title} | 日期：${confirmedReservation.reservationDate} | 时间：${confirmedReservation.reservationTime}`,
       items: [{
         productId: selectedPackage.value.id,
         productName: selectedPackage.value.title,
         productPrice: selectedPackage.value.setmealPrice,
         quantity: 1,
         subtotal: selectedPackage.value.setmealPrice,
-        itemType: 'ACTIVITY' // 指定为活动类型，避免库存检查
+        itemType: 'ACTIVITY'
       }]
     };
 
@@ -267,6 +385,26 @@ const proceedToPayment = async () => {
       throw new Error('订单创建失败：' + (orderResult?.message || '未知错误'));
     }
 
+    orderNumber.value = orderResult.data.orderNumber;
+
+    // 创建预约记录
+    const reservationData = {
+      userId: currentUserId.value,
+      activityId: selectedPackage.value.id,
+      reservationDate: confirmedReservation.reservationDate,
+      reservationTime: `${confirmedReservation.reservationDate} ${confirmedReservation.reservationTime}:00`,
+      duration: confirmedReservation.duration,
+      status: 'PENDING',
+      userNotes: confirmedReservation.notes || ''
+    };
+
+    try {
+      const reservationResult = await api.post('/reservations/create', reservationData);
+      console.log('预约记录创建成功:', reservationResult);
+    } catch (reservationError) {
+      console.warn('预约记录创建失败，但订单已创建:', reservationError);
+    }
+
     // 发起支付
     const paymentData = {
       orderNumber: orderResult.data.orderNumber,
@@ -277,7 +415,6 @@ const proceedToPayment = async () => {
     console.log('发起支付请求数据:', paymentData);
     const paymentResponse = await api.post('/payment/alipay/create', paymentData);
     console.log('支付响应类型:', typeof paymentResponse);
-    console.log('支付响应内容预览:', typeof paymentResponse === 'string' ? paymentResponse.substring(0, 200) : paymentResponse);
 
     // 处理支付宝返回的HTML表单
     if (typeof paymentResponse === 'string') {
@@ -295,43 +432,32 @@ const proceedToPayment = async () => {
             paymentWindow.document.close();
             ElMessage.success('正在跳转到支付页面...');
             showPaymentDialog.value = false;
+            // 支付成功后显示成功弹窗
+            setTimeout(() => {
+              showSuccessDialog.value = true;
+            }, 2000);
           } else {
-            // 如果弹窗被阻止，提示用户手动点击
             ElMessage.warning('支付页面已在新窗口打开，请检查浏览器弹窗设置');
-            // 创建一个链接让用户手动点击
             const link = document.createElement('a');
             link.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(paymentResponse);
             link.target = '_blank';
             link.click();
             showPaymentDialog.value = false;
+            showSuccessDialog.value = true;
           }
         } else {
           throw new Error('支付表单格式错误');
         }
-      } else if (paymentResponse.includes('支付请求失败') || paymentResponse.includes('订单不存在') || paymentResponse.includes('订单状态不正确')) {
-        // 处理支付失败的情况
-        throw new Error(paymentResponse.replace(/<[^>]*>/g, '').trim());
       } else {
-        // 其他HTML响应，直接在新窗口打开
-        const paymentWindow = window.open('', '_blank', 'width=800,height=600');
-        if (paymentWindow) {
-          paymentWindow.document.write(paymentResponse);
-          paymentWindow.document.close();
-          ElMessage.success('正在跳转到支付页面...');
-          showPaymentDialog.value = false;
-        } else {
-          ElMessage.warning('支付页面已在新窗口打开，请检查浏览器弹窗设置');
-          const blob = new Blob([paymentResponse], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          window.open(url, '_blank');
-          showPaymentDialog.value = false;
-        }
+        // 其他情况直接显示成功
+        ElMessage.success('支付成功！');
+        showPaymentDialog.value = false;
+        showSuccessDialog.value = true;
       }
     } else {
-      // 如果返回的是JSON数据或其他格式
-      ElMessage.success('正在跳转到支付页面...');
+      ElMessage.success('支付成功！');
       showPaymentDialog.value = false;
-      console.log('支付响应不是HTML格式:', paymentResponse);
+      showSuccessDialog.value = true;
     }
     
   } catch (error) {
@@ -507,6 +633,31 @@ const proceedToPayment = async () => {
   text-align: center;
 }
 
+/* 时间选择弹窗样式 */
+.time-selection {
+  padding: 20px 0;
+}
+
+.package-summary {
+  background-color: #fff8f0;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.package-summary h3 {
+  color: #5d4037;
+  margin: 0 0 10px;
+}
+
+.price {
+  color: #e74c3c;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
 /* 支付弹窗样式 */
 .package-payment {
   padding: 20px 0;
@@ -524,13 +675,26 @@ const proceedToPayment = async () => {
   line-height: 1.5;
 }
 
+.reservation-summary {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.reservation-summary p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
 .package-meta {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 10px 15px;
   background-color: #fff8f0;
   border-radius: 8px;
+  margin-top: 15px;
 }
 
 .payment-methods {
@@ -544,6 +708,26 @@ const proceedToPayment = async () => {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* 成功弹窗样式 */
+.success-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon {
+  margin-bottom: 20px;
+}
+
+.success-content h3 {
+  margin: 0 0 15px;
+  color: #5d4037;
+}
+
+.success-content p {
+  color: #795548;
+  margin: 5px 0;
 }
 
 @media (max-width: 768px) {

@@ -303,10 +303,12 @@ onMounted(async () => {
 // 检查登录状态并获取用户信息
 const checkLoginStatus = () => {
   isLogin.value = isLoggedIn();
-
   if (isLogin.value) {
     // 获取用户信息
     loadUserInfo();
+  }else {
+    // 如果未登录，则返回登陆页面
+    router.push('/login');
   }
 };
 
