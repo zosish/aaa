@@ -4,7 +4,7 @@
     <!-- 页面头部：标题+面包屑 -->
     <div class="page-header">
       <el-breadcrumb separator="/" class="breadcrumb">
-        <el-breadcrumb-item @click="$router.push('/')">首页</el-breadcrumb-item>
+        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
         <el-breadcrumb-item>周边商品</el-breadcrumb-item>
       </el-breadcrumb>
       <h1>周边商品</h1>

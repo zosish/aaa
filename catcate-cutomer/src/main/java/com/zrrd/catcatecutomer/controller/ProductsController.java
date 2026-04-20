@@ -23,7 +23,7 @@ import java.util.Map;
  * @since 2025-10-29
  */
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/catcatecutomer/products")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ProductsController {
 

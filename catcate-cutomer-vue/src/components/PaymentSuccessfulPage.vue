@@ -126,7 +126,7 @@ const continueShopping = () => {
 };
 
 const goToHomepage = () => {
-  router.push('/HomePage');
+  router.push('/home');
 };
 </script>
 

@@ -124,7 +124,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
                 .le("payment_time", endDate.atTime(23, 59, 59));
 
         List<Map<String, Object>> result = this.getBaseMapper().selectMaps(queryWrapper);
-        if (!result.isEmpty() && result.get(0).get("total_sales") != null) {
+        if (!result.isEmpty() && result.get(0) != null && result.get(0).get("total_sales") != null) {
             return new BigDecimal(result.get(0).get("total_sales").toString());
         }
         return BigDecimal.ZERO;

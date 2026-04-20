@@ -17,4 +17,6 @@ import java.util.Map;
 public interface ProductCategoriesMapper extends BaseMapper<ProductCategories> {
     List<ProductCategories> selectProductCategoriesNoNull(Map<String,Object> requestParams);
     int countProductCategoriesNoNull(Map<String,Object> requestParams);
+    int countByCode(Map<String, Object> params);
+    List<ProductCategories> selectParentCategories();
 }

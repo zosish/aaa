@@ -15,12 +15,14 @@
                     <el-input v-model="searchForm.name" placeholder="搜索商品名称" clearable prefix-icon="Search"></el-input>
                 </el-col>
                 <el-col :span="6">
-                    <el-select v-model="searchForm.category" placeholder="选择商品分类" clearable>
-                        <el-option label="食品" value="FOOD"></el-option>
-                        <el-option label="玩具" value="TOY"></el-option>
-                        <el-option label="用品" value="SUPPLIES"></el-option>
-                        <el-option label="其他" value="OTHER"></el-option>
-                    </el-select>
+                    <el-cascader
+                        v-model="searchCategoryPath"
+                        :options="categoryTree"
+                        :props="cascaderProps"
+                        placeholder="选择商品分类"
+                        clearable
+                        @change="handleSearchCategoryChange"
+                    ></el-cascader>
                 </el-col>
                 <el-col :span="6">
                     <el-input v-model="searchForm.brand" placeholder="搜索品牌" clearable prefix-icon="Shop"></el-input>
@@ -134,12 +136,13 @@
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="商品分类" prop="category">
-                            <el-select v-model="productForm.category" placeholder="请选择商品分类">
-                                <el-option label="食品" value="FOOD"></el-option>
-                                <el-option label="玩具" value="TOY"></el-option>
-                                <el-option label="用品" value="SUPPLIES"></el-option>
-                                <el-option label="其他" value="OTHER"></el-option>
-                            </el-select>
+                            <el-cascader
+                                v-model="categoryPath"
+                                :options="categoryTree"
+                                :props="cascaderProps"
+                                placeholder="请选择商品分类"
+                                @change="handleCategoryChange"
+                            ></el-cascader>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -297,6 +300,19 @@ const uploadUrl = ref('http://localhost:8081/catcate/products/uploadImage'); // 
 const fileInput = ref(null);
 const uploadProgress = ref(0);
 const uploadError = ref('');
+
+// 分类相关
+const categoryTree = ref([]);
+const categoryPath = ref([]);
+const searchCategoryPath = ref([]);
+const cascaderProps = {
+    value: 'code',
+    label: 'name',
+    children: 'children',
+    checkStrictly: false,
+    emitPath: true,
+    expandTrigger: 'click'
+};
 
 // 触发文件选择
 const triggerFileInput = () => {
@@ -542,7 +558,79 @@ const batchActionText = computed(() => {
 // 生命周期
 onMounted(() => {
     fetchProductList();
+    fetchCategoryTree();
 });
+
+// 获取分类树
+const fetchCategoryTree = async () => {
+    try {
+        const res = await fetch("http://localhost:8081/catcate/productCategories/selectList", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ pageNum: 1, pageSize: 100 })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.list)) {
+                categoryTree.value = buildCategoryTree(data.list);
+            }
+        }
+    } catch (error) {
+        console.error('获取分类树失败:', error);
+    }
+};
+
+// 构建分类树
+const buildCategoryTree = (categories) => {
+    const map = {};
+    const tree = [];
+
+    // 首先创建所有分类的映射
+    categories.forEach(category => {
+        map[category.id] = {
+            ...category,
+            children: []
+        };
+    });
+
+    // 然后构建树结构
+    categories.forEach(category => {
+        if (!category.parentId) {
+            // 根分类
+            tree.push(map[category.id]);
+        } else {
+            // 子分类
+            if (map[category.parentId]) {
+                map[category.parentId].children.push(map[category.id]);
+            }
+        }
+    });
+
+    return tree;
+};
+
+// 处理分类选择变化
+const handleCategoryChange = (value) => {
+    if (value && value.length > 0) {
+        // 只使用最后一级分类的代码
+        productForm.category = value[value.length - 1];
+    } else {
+        productForm.category = '';
+    }
+};
+
+// 处理搜索分类选择变化
+const handleSearchCategoryChange = (value) => {
+    if (value && value.length > 0) {
+        // 只使用最后一级分类的代码
+        searchForm.category = value[value.length - 1];
+    } else {
+        searchForm.category = '';
+    }
+};
 
 // 方法：获取商品列表
 const fetchProductList = async () => {
@@ -596,6 +684,7 @@ const resetSearch = () => {
     searchForm.category = '';
     searchForm.brand = '';
     searchForm.isAvailable = '';
+    searchCategoryPath.value = [];
     pagination.currentPage = 1;
     fetchProductList();
 };
@@ -801,7 +890,7 @@ const handleAddProduct = () => {
     // 直接赋值，确保所有字段都被正确初始化
     productForm.id = '';
     productForm.name = '';
-    productForm.category = 'FOOD';
+    productForm.category = '';
     productForm.description = '';
     productForm.price = 0;
     productForm.stockQuantity = 0;
@@ -812,6 +901,7 @@ const handleAddProduct = () => {
     productForm.salesCount = 0;
     productForm.createTime = '';
     productForm.updateTime = '';
+    categoryPath.value = [];
 
     dialogVisible.value = true;
 };
@@ -835,7 +925,31 @@ const handleEditProduct = (row) => {
         createTime: row.createTime,
         updateTime: row.updateTime
     });
+    // 设置分类路径
+    categoryPath.value = findCategoryPath(row.category);
     dialogVisible.value = true;
+};
+
+// 查找分类路径
+const findCategoryPath = (categoryCode) => {
+    const path = [];
+    const findPath = (nodes) => {
+        for (const node of nodes) {
+            if (node.code === categoryCode) {
+                path.unshift(node.code);
+                return true;
+            }
+            if (node.children && node.children.length > 0) {
+                if (findPath(node.children)) {
+                    path.unshift(node.code);
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    findPath(categoryTree.value);
+    return path;
 };
 
 const handleViewProduct = (row) => {

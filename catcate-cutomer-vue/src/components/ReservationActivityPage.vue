@@ -236,7 +236,7 @@ onMounted(() => {
     ).then(() => {
       router.push('/login');
     }).catch(() => {
-      router.push('/HomePage');
+      router.push('/home');
     });
     return;
   }

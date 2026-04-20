@@ -3,7 +3,7 @@
     <div class="shopping-cart-page">
         <div class="page-header">
             <el-breadcrumb separator="/">
-                <el-breadcrumb-item @click="$router.push('/')">首页</el-breadcrumb-item>
+                <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
                 <el-breadcrumb-item>购物车</el-breadcrumb-item>
             </el-breadcrumb>
             <h1>我的购物车</h1>

@@ -3,7 +3,7 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item @click="$router.push('/')">首页</el-breadcrumb-item>
+        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
         <el-breadcrumb-item>我的预约</el-breadcrumb-item>
       </el-breadcrumb>
       <h1>我的预约</h1>

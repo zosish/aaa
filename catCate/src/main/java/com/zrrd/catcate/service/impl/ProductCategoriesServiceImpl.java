@@ -38,4 +38,41 @@ public class ProductCategoriesServiceImpl extends ServiceImpl<ProductCategoriesM
         page.setTotal(total);
         return page;
     }
+
+    @Override
+    public boolean checkCodeUnique(String code, Long id) {
+        Map<String, Object> params = new java.util.HashMap<>();
+        params.put("code", code);
+        if (id != null) {
+            params.put("notId", id);
+        }
+        int count = productCategoriesMapper.countByCode(params);
+        return count == 0;
+    }
+
+    @Override
+    public List<ProductCategories> getParentCategoryOptions() {
+        return productCategoriesMapper.selectParentCategories();
+    }
+
+    @Override
+    public boolean updateSort(Long id, Integer sortOrder) {
+        ProductCategories category = new ProductCategories();
+        category.setId(id);
+        category.setSortOrder(sortOrder);
+        return updateById(category);
+    }
+
+    @Override
+    public boolean updateStatus(Long id, Byte isActive) {
+        ProductCategories category = new ProductCategories();
+        category.setId(id);
+        category.setIsActive(isActive);
+        return updateById(category);
+    }
+
+    @Override
+    public boolean deleteByIds(List<Long> ids) {
+        return removeByIds(ids);
+    }
 }

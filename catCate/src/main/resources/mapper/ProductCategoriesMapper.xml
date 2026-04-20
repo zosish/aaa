@@ -35,4 +35,19 @@
     <select id="countProductCategoriesNoNull" parameterType="map" resultType="int">
         select count(*) from product_categories
     </select>
+    
+    <!-- 检查分类代码是否唯一 -->
+    <select id="countByCode" parameterType="map" resultType="int">
+        select count(*) from product_categories
+        where code = #{code}
+        <if test="notId != null">
+            and id != #{notId}
+        </if>
+    </select>
+    
+    <!-- 获取所有分类选项 -->
+    <select id="selectParentCategories" resultMap="BaseResultMap">
+        <include refid="Base_Column_List" />
+        order by sort_order asc, id asc
+    </select>
 </mapper>

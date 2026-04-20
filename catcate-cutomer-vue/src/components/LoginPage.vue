@@ -244,7 +244,7 @@ const handleLogin = async () => {
 
       // 跳转到home页
       setTimeout(() => {
-        router.push('/HomePage');
+        router.push('/home');
       }, 100);
     } else {
       ElMessage.error('登录失败，用户名或密码错误');

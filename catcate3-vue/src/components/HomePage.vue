@@ -32,12 +32,16 @@
         <el-menu :default-openeds="['dashboard']" :default-active="activeMenu" class="sidebar-menu"
           @select="handleMenuSelect">
           <el-menu-item index="dashboard">
-            <el-icon><Layout /></el-icon>
+            <el-icon>
+              <Layout />
+            </el-icon>
             <span>数据概览</span>
           </el-menu-item>
           <el-sub-menu index="users">
             <template #title>
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User />
+              </el-icon>
               <span>用户管理</span>
             </template>
             <el-menu-item index="users">用户列表</el-menu-item>
@@ -45,7 +49,9 @@
           </el-sub-menu>
           <el-sub-menu index="cats">
             <template #title>
-              <el-icon><Cat /></el-icon>
+              <el-icon>
+                <User />
+              </el-icon>
               <span>猫咪管理</span>
             </template>
             <el-menu-item index="cats/list">猫咪列表</el-menu-item>
@@ -53,7 +59,9 @@
           </el-sub-menu>
           <el-sub-menu index="reservations">
             <template #title>
-              <el-icon><Calendar /></el-icon>
+              <el-icon>
+                <Calendar />
+              </el-icon>
               <span>预约管理</span>
             </template>
             <el-menu-item index="appointments">预约列表</el-menu-item>
@@ -61,7 +69,9 @@
           </el-sub-menu>
           <el-sub-menu index="products">
             <template #title>
-              <el-icon><ShoppingCart /></el-icon>
+              <el-icon>
+                <ShoppingCart />
+              </el-icon>
               <span>商品管理</span>
             </template>
             <el-menu-item index="products/list">商品列表</el-menu-item>
@@ -70,7 +80,9 @@
           </el-sub-menu>
           <el-sub-menu index="activities">
             <template #title>
-              <el-icon><Ticket /></el-icon>
+              <el-icon>
+                <ShoppingCart />
+              </el-icon>
               <span>活动管理</span>
             </template>
             <el-menu-item index="activities/list">活动列表</el-menu-item>
@@ -78,7 +90,9 @@
           </el-sub-menu>
           <el-sub-menu index="reviews">
             <template #title>
-              <el-icon><Comment /></el-icon>
+              <el-icon>
+                <ShoppingCart />
+              </el-icon>
               <span>评价管理</span>
             </template>
             <el-menu-item index="reviews/list">评价列表</el-menu-item>
@@ -101,7 +115,9 @@
                   <div class="stat-value">{{ stats.totalUsers }}</div>
                 </div>
                 <div class="stat-icon icon-users">
-                  <el-icon :size="28"><User /></el-icon>
+                  <el-icon :size="28">
+                    <User />
+                  </el-icon>
                 </div>
               </div>
             </el-card>
@@ -114,7 +130,9 @@
                   <div class="stat-value">{{ stats.todayReservations }}</div>
                 </div>
                 <div class="stat-icon icon-reservations">
-                  <el-icon :size="28"><Calendar /></el-icon>
+                  <el-icon :size="28">
+                    <Calendar />
+                  </el-icon>
                 </div>
               </div>
             </el-card>
@@ -127,7 +145,9 @@
                   <div class="stat-value">¥{{ stats.monthlySales.toLocaleString() }}</div>
                 </div>
                 <div class="stat-icon icon-sales">
-                  <el-icon :size="28"><Money /></el-icon>
+                  <el-icon :size="28">
+                    <Money />
+                  </el-icon>
                 </div>
               </div>
             </el-card>
@@ -140,7 +160,9 @@
                   <div class="stat-value">{{ stats.pendingTasks }}</div>
                 </div>
                 <div class="stat-icon icon-tasks">
-                  <el-icon :size="28"><TodoList /></el-icon>
+                  <el-icon :size="28">
+                    <TodoList />
+                  </el-icon>
                 </div>
               </div>
             </el-card>

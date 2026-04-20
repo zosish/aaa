@@ -5,7 +5,7 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item @click="$router.push('/HomePage')">首页</el-breadcrumb-item>
+        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
         <el-breadcrumb-item>个人中心</el-breadcrumb-item>
       </el-breadcrumb>
       <h1>个人中心</h1>

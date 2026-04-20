@@ -1,17 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isLoggedIn } from '@/utils/auth'
 
 // 定义路由
 const routes = [
   // 首页
   {
-    path: '/',
+    path: '/home',
     name: 'Home',
-    component: () => import('@/components/HomePage.vue')
-  },
-  // 登录
-  {
-    path: '/HomePage',
-    name: 'HomePage',
     component: () => import('@/components/HomePage.vue')
   },
   // 猫咪图鉴
@@ -22,7 +17,7 @@ const routes = [
   },
   // 登录
   {
-    path: '/login',
+    path: '/',
     name: 'Login',
     component: () => import('@/components/LoginPage.vue')
   },
@@ -123,6 +118,16 @@ const router = createRouter({
     }
     // 其他页面默认滚动到顶部
     return { top: 0 };
+  }
+})
+
+// 添加路由导航守卫 - 每次进入应用都检查登录状态
+router.beforeEach((to, from, next) => {
+  // 如果用户未登录且当前页面不是登录页，则跳转到登录页
+  if (!isLoggedIn() && to.path !== '/') {
+    next('/')
+  } else {
+    next()
   }
 })
 
