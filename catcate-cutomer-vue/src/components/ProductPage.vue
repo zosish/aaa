@@ -17,10 +17,14 @@
         <!-- 商品分类筛选 -->
         <div class="filter-item">
           <label class="filter-label">商品分类</label>
-          <el-select v-model="selectedCate" placeholder="全部分类" class="filter-select" @change="onFilterChange">
-            <el-option label="全部分类" value="all" />
-            <el-option v-for="cate in productCategories" :key="cate.id" :label="cate.name" :value="cate.code" />
-          </el-select>
+          <el-cascader
+            v-model="categoryPath"
+            :options="categoryTree"
+            :props="cascaderProps"
+            placeholder="全部分类"
+            class="filter-select"
+            @change="handleCategoryChange"
+          ></el-cascader>
         </div>
 
         <!-- 价格排序 -->
@@ -152,6 +156,18 @@ const selectedCate = ref('all');
 const sortType = ref('default');
 const searchKeyword = ref('');
 
+// 分类树相关
+const categoryTree = ref([]);
+const categoryPath = ref([]);
+const cascaderProps = {
+    value: 'code',
+    label: 'name',
+    children: 'children',
+    checkStrictly: false,
+    emitPath: true,
+    expandTrigger: 'click'
+};
+
 // 数据存储
 const productCategories = ref([]);
 const products = ref([]); // 存储所有商品数据
@@ -253,9 +269,54 @@ const onSearchClear = () => {
   currentPage.value = 1; // 重置到第一页
 };
 
+// 处理分类选择变化
+const handleCategoryChange = (value) => {
+  if (value && value.length > 0) {
+    // 只使用最后一级分类的代码
+    selectedCate.value = value[value.length - 1];
+  } else {
+    selectedCate.value = 'all';
+  }
+  onFilterChange();
+};
+
+// 构建分类树
+const buildCategoryTree = (categories) => {
+  const map = {};
+  const tree = [];
+
+  // 首先创建所有分类的映射
+  categories.forEach(category => {
+    map[category.code] = {
+      ...category,
+      children: []
+    };
+  });
+
+  // 然后构建树结构
+  categories.forEach(category => {
+    if (!category.parentId) {
+      // 根分类
+      tree.push(map[category.code]);
+    } else {
+      // 子分类
+      // 找到父分类并添加到其children中
+      for (const key in map) {
+        if (map[key].id === category.parentId) {
+          map[key].children.push(map[category.code]);
+          break;
+        }
+      }
+    }
+  });
+
+  return tree;
+};
+
 // 重置筛选条件
 const resetFilter = () => {
   selectedCate.value = 'all';
+  categoryPath.value = [];
   sortType.value = 'default';
   searchKeyword.value = '';
   currentPage.value = 1;
@@ -320,8 +381,12 @@ const loadCategories = async () => {
       const result = await response.json();
       if (result.code === 200 && Array.isArray(result.data)) {
         productCategories.value = result.data.filter(cate => cate.isActive === 1);
+        // 构建分类树
+        categoryTree.value = buildCategoryTree(productCategories.value);
       } else {
         productCategories.value = getDefaultCategories();
+        // 构建分类树
+        categoryTree.value = buildCategoryTree(productCategories.value);
       }
     } else {
       throw new Error('HTTP Error: ' + response.status);
@@ -329,6 +394,8 @@ const loadCategories = async () => {
   } catch (error) {
     console.error('获取商品分类失败:', error);
     productCategories.value = getDefaultCategories();
+    // 构建分类树
+    categoryTree.value = buildCategoryTree(productCategories.value);
   }
 };
 
