@@ -1,14 +1,15 @@
 <template>
-  <div class="my-reservations-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
-        <el-breadcrumb-item>我的预约</el-breadcrumb-item>
-      </el-breadcrumb>
-      <h1>我的预约</h1>
-      <p>查看和管理您的猫咪预约记录</p>
-    </div>
+  <Layout>
+    <div class="my-reservations-page">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>我的预约</el-breadcrumb-item>
+        </el-breadcrumb>
+        <h1>我的预约</h1>
+        <p>查看和管理您的猫咪预约记录</p>
+      </div>
 
     <!-- 筛选和操作区域 -->
     <div class="filter-section">
@@ -142,7 +143,8 @@
         </div>
       </div>
     </el-dialog>
-  </div>
+    </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <!--  eslint-disable no-undef  -->
@@ -152,6 +154,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '@/utils/api'
 import { getUserId, isLoggedIn } from '@/utils/auth'
+import Layout from './Layout.vue'
 
 const router = useRouter()
 

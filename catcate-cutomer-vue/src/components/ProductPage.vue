@@ -1,6 +1,6 @@
 <!-- 商品页面 -->
 <template>
-  <div class="products-page">
+  <Layout>
     <!-- 页面头部：标题+面包屑 -->
     <div class="page-header">
       <el-breadcrumb separator="/" class="breadcrumb">
@@ -128,7 +128,7 @@
           @current-change="handleCurrentChange" background class="custom-pagination" />
       </div>
     </section>
-  </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <!--  eslint-disable no-undef  -->
@@ -138,6 +138,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ShoppingCart, Search } from '@element-plus/icons-vue';
 import { isLoggedIn } from '@/utils/auth';
+import Layout from './Layout.vue';
 
 // 路由实例
 const router = useRouter();
@@ -516,13 +517,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
 </script>
 
 <style scoped>
-/* 页面整体样式 */
-.products-page {
-  min-height: calc(100vh - 70px);
-  background-color: #fff9f5;
-  padding: 30px 40px;
-}
-
 /* 页面头部 */
 .page-header {
   margin-bottom: 30px;

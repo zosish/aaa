@@ -1,14 +1,15 @@
 <!-- 我的订单 -->
 <template>
-  <div class="my-orders-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
-        <el-breadcrumb-item>我的订单</el-breadcrumb-item>
-      </el-breadcrumb>
-      <h1>我的订单</h1>
-    </div>
+  <Layout>
+    <div class="my-orders-page">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>我的订单</el-breadcrumb-item>
+        </el-breadcrumb>
+        <h1>我的订单</h1>
+      </div>
 
     <!-- 订单列表 -->
     <section class="orders-section">
@@ -57,7 +58,8 @@
         </el-empty>
       </div>
     </section>
-  </div>
+    </div>
+  </Layout>
 </template>
 
 <script setup>
@@ -66,6 +68,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { api } from '../utils/api';
 import { getUserId } from '../utils/auth';
+import Layout from './Layout.vue';
 
 const router = useRouter();
 const orders = ref([]);

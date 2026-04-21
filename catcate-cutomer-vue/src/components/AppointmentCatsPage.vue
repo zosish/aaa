@@ -1,16 +1,17 @@
 <!-- 预约猫咪 -->
 <template>
-  <div class="appointment-cats-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
-        <el-breadcrumb-item @click="$router.push('/CatGuidePage')">猫咪图鉴</el-breadcrumb-item>
-        <el-breadcrumb-item>预约撸猫</el-breadcrumb-item>
-      </el-breadcrumb>
-      <h1>预约撸猫</h1>
-      <p>为心爱的猫咪预约专属互动时光</p>
-    </div>
+  <Layout>
+    <div class="appointment-cats-page">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
+          <el-breadcrumb-item @click="$router.push('/CatGuidePage')">猫咪图鉴</el-breadcrumb-item>
+          <el-breadcrumb-item>预约撸猫</el-breadcrumb-item>
+        </el-breadcrumb>
+        <h1>预约撸猫</h1>
+        <p>为心爱的猫咪预约专属互动时光</p>
+      </div>
 
     <!-- 猫咪信息展示 -->
     <div class="cat-info-section" v-if="selectedCat">
@@ -109,7 +110,8 @@
         </el-form-item>
       </el-form>
     </el-card>
-  </div>
+    </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <script setup>
@@ -119,6 +121,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { CircleCheck, InfoFilled, Clock } from '@element-plus/icons-vue';
 import { api } from '@/utils/api';
 import { getUserId, isLoggedIn } from '@/utils/auth';
+import Layout from './Layout.vue';
 
 // 路由和路由参数
 const router = useRouter();

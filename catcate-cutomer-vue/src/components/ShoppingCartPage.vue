@@ -1,13 +1,14 @@
 <!-- 购物车页面 -->
 <template>
-    <div class="shopping-cart-page">
-        <div class="page-header">
-            <el-breadcrumb separator="/">
-                <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
-                <el-breadcrumb-item>购物车</el-breadcrumb-item>
-            </el-breadcrumb>
-            <h1>我的购物车</h1>
-        </div>
+    <Layout>
+        <div class="shopping-cart-page">
+            <div class="page-header">
+                <el-breadcrumb separator="/">
+                    <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
+                    <el-breadcrumb-item>购物车</el-breadcrumb-item>
+                </el-breadcrumb>
+                <h1>我的购物车</h1>
+            </div>
 
         <div v-if="loading" class="loading-cart">
             <el-skeleton :rows="5" animated />
@@ -178,7 +179,8 @@
                 </span>
             </template>
         </el-dialog>
-    </div>
+        </div>
+    </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
@@ -189,6 +191,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ShoppingCart } from '@element-plus/icons-vue'
 import { api } from '../utils/api'
 import { getUserId, isLoggedIn } from '../utils/auth'
+import Layout from './Layout.vue'
 
 const router = useRouter()
 const cartItems = ref([])

@@ -1,11 +1,12 @@
 <!-- 预约撸猫套餐页面 -->
 <template>
-  <div class="reservation-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1>预约撸猫</h1>
-      <p>选择心仪的猫咪和时段，享受温馨的撸猫时光</p>
-    </div>
+  <Layout>
+    <div class="reservation-page">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <h1>预约撸猫</h1>
+        <p>选择心仪的猫咪和时段，享受温馨的撸猫时光</p>
+      </div>
 
     <!-- 套餐活动展示 -->
     <section class="section activities-section">
@@ -163,7 +164,8 @@
         </span>
       </template>
     </el-dialog>
-  </div>
+    </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <script setup>
@@ -173,6 +175,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Check, Clock } from '@element-plus/icons-vue';
 import { api } from '@/utils/api';
 import { getUserId, isLoggedIn } from '@/utils/auth';
+import Layout from './Layout.vue';
 
 // 路由实例
 const router = useRouter();

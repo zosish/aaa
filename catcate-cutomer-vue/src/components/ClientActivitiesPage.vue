@@ -1,11 +1,12 @@
 <!-- 客户端活动页面 -->
 <template>
-  <div class="client-activities-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <h1>店内活动</h1>
-      <p>精彩活动，等你参与</p>
-    </div>
+  <Layout>
+    <div class="client-activities-page">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <h1>店内活动</h1>
+        <p>精彩活动，等你参与</p>
+      </div>
 
     <!-- 搜索区域 -->
     <div class="search-section">
@@ -174,7 +175,8 @@
         <el-button type="primary" @click="participateActivity">立即参与</el-button>
       </template>
     </el-dialog>
-  </div>
+    </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
@@ -183,6 +185,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Calendar, Clock, Search } from '@element-plus/icons-vue'
 import { api } from '@/utils/api'
+import Layout from './Layout.vue'
 
 // 数据响应式变量
 const loading = ref(false)

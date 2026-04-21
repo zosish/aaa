@@ -1,14 +1,15 @@
 <!-- 订单详情页面 -->
 <template>
-  <div class="order-detail-page">
-    <div class="page-header">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
-        <el-breadcrumb-item @click="$router.push('/my-orders')">我的订单</el-breadcrumb-item>
-        <el-breadcrumb-item>订单详情</el-breadcrumb-item>
-      </el-breadcrumb>
-      <h1>订单详情</h1>
-    </div>
+  <Layout>
+    <div class="order-detail-page">
+      <div class="page-header">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
+          <el-breadcrumb-item @click="$router.push('/my-orders')">我的订单</el-breadcrumb-item>
+          <el-breadcrumb-item>订单详情</el-breadcrumb-item>
+        </el-breadcrumb>
+        <h1>订单详情</h1>
+      </div>
 
     <div class="order-container" v-if="orderInfo" v-loading="loading">
       <!-- 订单基本信息 -->
@@ -167,7 +168,8 @@
         </span>
       </template>
     </el-dialog>
-  </div>
+    </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <!--  eslint-disable no-undef  -->
@@ -178,6 +180,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Star, Plus, RefreshLeft } from '@element-plus/icons-vue';
 import { api } from '@/utils/api';
 import { getUserId, isLoggedIn } from '@/utils/auth';
+import Layout from './Layout.vue';
 
 // 路由和状态
 const route = useRoute();

@@ -1,15 +1,16 @@
 <!-- 用户个人信息页面 -->
  <!-- 个人中心页面 -->
 <template>
-  <div class="user-profile-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
-        <el-breadcrumb-item>个人中心</el-breadcrumb-item>
-      </el-breadcrumb>
-      <h1>个人中心</h1>
-    </div>
+  <Layout>
+    <div class="user-profile-page">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>个人中心</el-breadcrumb-item>
+        </el-breadcrumb>
+        <h1>个人中心</h1>
+      </div>
 
     <div class="profile-container">
       <!-- 侧边栏菜单 -->
@@ -23,22 +24,7 @@
             <el-icon><User /></el-icon>
             <span>基本信息</span>
           </el-menu-item>
-          <el-menu-item index="orders">
-            <el-icon><Document /></el-icon>
-            <span>我的订单</span>
-          </el-menu-item>
-          <el-menu-item index="reservations">
-            <el-icon><Calendar /></el-icon>
-            <span>我的预约</span>
-          </el-menu-item>
-          <el-menu-item index="favorites">
-            <el-icon><Star /></el-icon>
-            <span>我的收藏</span>
-          </el-menu-item>
-          <el-menu-item index="reviews">
-            <el-icon><ChatLineSquare /></el-icon>
-            <span>我的评价</span>
-          </el-menu-item>
+          
           <el-menu-item index="addresses">
             <el-icon><Location /></el-icon>
             <span>收货地址</span>
@@ -146,166 +132,7 @@
           </el-card>
         </div>
 
-        <!-- 我的订单面板 -->
-        <div v-if="activeMenu === 'orders'" class="content-panel">
-          <el-card>
-            <template #header>
-              <div class="card-header">
-                <span>我的订单</span>
-                <el-button type="primary" size="small" @click="$router.push('/my-orders')">
-                  查看全部订单
-                </el-button>
-              </div>
-            </template>
-            
-            <div v-if="recentOrders.length > 0">
-              <div 
-                v-for="order in recentOrders" 
-                :key="order.id" 
-                class="order-item"
-                @click="viewOrderDetail(order)"
-              >
-                <div class="order-header">
-                  <span class="order-number">订单号：{{ order.orderNumber }}</span>
-                  <el-tag :type="getOrderStatusTagType(order.orderStatus)">
-                    {{ getOrderStatusText(order.orderStatus) }}
-                  </el-tag>
-                </div>
-                <div class="order-content">
-                  <div class="order-products">
-                    <el-image
-                      v-for="(item, index) in order.items.slice(0, 3)"
-                      :key="index"
-                      :src="item.productImage"
-                      class="product-thumb"
-                      fit="cover"
-                    />
-                    <div v-if="order.items.length > 3" class="more-products">
-                      +{{ order.items.length - 3 }}
-                    </div>
-                  </div>
-                  <div class="order-info">
-                    <div class="order-amount">¥{{ order.totalAmount }}</div>
-                    <div class="order-date">{{ formatDate(order.createTime) }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <el-empty v-else description="暂无订单记录" />
-          </el-card>
-        </div>
 
-        <!-- 我的预约面板 -->
-        <div v-if="activeMenu === 'reservations'" class="content-panel">
-          <el-card>
-            <template #header>
-              <div class="card-header">
-                <span>我的预约</span>
-              </div>
-            </template>
-            
-            <div v-if="reservations.length > 0">
-              <div 
-                v-for="reservation in reservations" 
-                :key="reservation.id" 
-                class="reservation-item"
-              >
-                <div class="reservation-header">
-                  <span class="reservation-title">{{ reservation.activityTitle }}</span>
-                  <el-tag :type="getReservationStatusType(reservation.status)">
-                    {{ getReservationStatusText(reservation.status) }}
-                  </el-tag>
-                </div>
-                <div class="reservation-content">
-                  <div class="reservation-info">
-                    <div class="info-item">
-                      <el-icon><Calendar /></el-icon>
-                      <span>{{ formatDate(reservation.reservationTime) }}</span>
-                    </div>
-                    <div class="info-item">
-                      <el-icon><User /></el-icon>
-                      <span>{{ reservation.participantCount }}人</span>
-                    </div>
-                  </div>
-                  <div class="reservation-actions">
-                    <el-button 
-                      size="small" 
-                      type="primary"
-                      @click="viewReservationDetail(reservation)"
-                    >
-                      查看详情
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <el-empty v-else description="暂无预约记录" />
-          </el-card>
-        </div>
-
-        <!-- 我的收藏面板 -->
-        <div v-if="activeMenu === 'favorites'" class="content-panel">
-          <el-card>
-            <template #header>
-              <div class="card-header">
-                <span>我的收藏</span>
-              </div>
-            </template>
-            
-            <div v-if="favorites.length > 0" class="favorites-grid">
-              <div 
-                v-for="favorite in favorites" 
-                :key="favorite.id" 
-                class="favorite-item"
-                @click="viewProduct(favorite.productId)"
-              >
-                <el-image :src="favorite.productImage" class="favorite-image" fit="cover" />
-                <div class="favorite-info">
-                  <h4 class="product-name">{{ favorite.productName }}</h4>
-                  <div class="product-price">¥{{ favorite.price }}</div>
-                </div>
-              </div>
-            </div>
-            <el-empty v-else description="暂无收藏商品" />
-          </el-card>
-        </div>
-
-        <!-- 我的评价面板 -->
-        <div v-if="activeMenu === 'reviews'" class="content-panel">
-          <el-card>
-            <template #header>
-              <div class="card-header">
-                <span>我的评价</span>
-              </div>
-            </template>
-            
-            <div v-if="myReviews.length > 0">
-              <div 
-                v-for="review in myReviews" 
-                :key="review.id" 
-                class="review-item"
-              >
-                <div class="review-header">
-                  <div class="review-product">
-                    <el-image :src="review.productImage" class="product-thumb" fit="cover" />
-                    <span>{{ review.productName }}</span>
-                  </div>
-                  <el-rate 
-                    :model-value="review.rating" 
-                    disabled 
-                    :max="5"
-                    size="small"
-                  />
-                </div>
-                <div class="review-content">
-                  <p>{{ review.content }}</p>
-                  <div class="review-date">{{ formatDate(review.createTime) }}</div>
-                </div>
-              </div>
-            </div>
-            <el-empty v-else description="暂无评价记录" />
-          </el-card>
-        </div>
 
         <!-- 收货地址面板 -->
         <div v-if="activeMenu === 'addresses'" class="content-panel">
@@ -494,7 +321,8 @@
         <el-button type="primary" @click="changePassword" :loading="passwordSaving">确定</el-button>
       </template>
     </el-dialog>
-  </div>
+    </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
@@ -503,11 +331,11 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { 
-  User, Document, Calendar, Star, ChatLineSquare, 
-  Location, Lock, Plus, Iphone, Message 
+  User, Location, Lock, Plus, Iphone, Message 
 } from '@element-plus/icons-vue';
 import { api } from '../utils/api';
 import { getUserInfo, getUserId } from '../utils/auth';
+import Layout from './Layout.vue';
 
 const router = useRouter();
 
@@ -539,10 +367,6 @@ const addressFormRef = ref(null);
 const passwordFormRef = ref(null);
 
 // 数据列表
-const recentOrders = ref([]);
-const reservations = ref([]);
-const favorites = ref([]);
-const myReviews = ref([]);
 const addresses = ref([]);
 
 // 地址表单
@@ -641,14 +465,6 @@ const regionOptions = [
 onMounted(() => {
   // 加载用户信息
   loadUserProfile();
-  // 加载用户地址
-  loadRecentOrders();
-  // 加载用户订单
-  loadReservations();
-  // 加载用户收藏
-  loadFavorites();
-  // 加载用户评论
-  loadMyReviews();
   // 加载用户地址
   loadAddresses();
 });
@@ -803,56 +619,6 @@ const compressImage = (file, maxWidth, quality) => {
   });
 };
 
-// 加载最近订单
-const loadRecentOrders = async () => {
-  try {
-    const response = await api.get(`/orders/user/${getUserId()}/recent-with-items`, {
-      params: { limit: 5 }
-    });
-    if (response && response.code === 200) {
-      recentOrders.value = response.data || [];
-    }
-  } catch (error) {
-    console.error('加载订单失败:', error);
-  }
-};
-
-// 加载预约信息
-const loadReservations = async () => {
-  try {
-    const response = await api.get(`/reservations/user/${getUserId()}`);
-    if (response && response.code === 200) {
-      reservations.value = response.data || [];
-    }
-  } catch (error) {
-    console.error('加载预约失败:', error);
-  }
-};
-
-// 加载收藏商品
-const loadFavorites = async () => {
-  try {
-    const response = await api.get(`/favorites/user/${getUserId()}`);
-    if (response && response.code === 200) {
-      favorites.value = response.data || [];
-    }
-  } catch (error) {
-    console.error('加载收藏失败:', error);
-  }
-};
-
-// 加载我的评价
-const loadMyReviews = async () => {
-  try {
-    const response = await api.get(`/reviews/user/${getUserId()}`);
-    if (response && response.code === 200) {
-      myReviews.value = response.data || [];
-    }
-  } catch (error) {
-    console.error('加载评价失败:', error);
-  }
-};
-
 // 加载收货地址
 const loadAddresses = async () => {
   try {
@@ -863,21 +629,6 @@ const loadAddresses = async () => {
   } catch (error) {
     console.error('加载地址失败:', error);
   }
-};
-
-// 查看订单详情
-const viewOrderDetail = (order) => {
-  router.push(`/OrderDetailPage?orderNumber=${order.orderNumber}`);
-};
-
-// 查看预约详情
-const viewReservationDetail = (reservation) => {
-  router.push(`/reservation/${reservation.id}`);
-};
-
-// 查看商品详情
-const viewProduct = (productId) => {
-  router.push(`/product/${productId}`);
 };
 
 // 编辑地址
@@ -1055,51 +806,7 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('zh-CN');
 };
 
-// 订单状态标签类型
-const getOrderStatusTagType = (status) => {
-  const statusMap = {
-    'PENDING': '',
-    'PROCESSING': 'primary',
-    'SHIPPED': 'success',
-    'COMPLETED': 'success',
-    'CANCELLED': 'danger'
-  };
-  return statusMap[status] || '';
-};
 
-// 订单状态文本
-const getOrderStatusText = (status) => {
-  const statusMap = {
-    'PENDING': '待处理',
-    'PROCESSING': '处理中',
-    'SHIPPED': '已发货',
-    'COMPLETED': '已完成',
-    'CANCELLED': '已取消'
-  };
-  return statusMap[status] || status;
-};
-
-// 预约状态类型
-const getReservationStatusType = (status) => {
-  const statusMap = {
-    'PENDING': '',
-    'CONFIRMED': 'success',
-    'CANCELLED': 'danger',
-    'COMPLETED': 'success'
-  };
-  return statusMap[status] || '';
-};
-
-// 预约状态文本
-const getReservationStatusText = (status) => {
-  const statusMap = {
-    'PENDING': '待确认',
-    'CONFIRMED': '已确认',
-    'CANCELLED': '已取消',
-    'COMPLETED': '已完成'
-  };
-  return statusMap[status] || status;
-};
 </script>
 
 <style scoped>
@@ -1173,171 +880,7 @@ const getReservationStatusText = (status) => {
   line-height: 100px;
 }
 
-.order-item {
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  margin-bottom: 15px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
 
-.order-item:hover {
-  border-color: #409eff;
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
-}
-
-.order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.order-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.order-products {
-  display: flex;
-  gap: 10px;
-}
-
-.product-thumb {
-  width: 50px;
-  height: 50px;
-  border-radius: 4px;
-  object-fit: cover;
-}
-
-.more-products {
-  width: 50px;
-  height: 50px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 12px;
-}
-
-.order-info {
-  text-align: right;
-}
-
-.order-amount {
-  font-size: 18px;
-  font-weight: bold;
-  color: #e74c3c;
-  margin-bottom: 5px;
-}
-
-.reservation-item {
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  margin-bottom: 15px;
-}
-
-.reservation-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.reservation-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.reservation-info {
-  display: flex;
-  gap: 20px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #666;
-}
-
-.favorites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.favorite-item {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.favorite-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.favorite-image {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-}
-
-.favorite-info {
-  padding: 15px;
-}
-
-.product-name {
-  font-size: 14px;
-  margin: 0 0 10px;
-  color: #333;
-}
-
-.product-price {
-  font-size: 16px;
-  font-weight: bold;
-  color: #e74c3c;
-}
-
-.review-item {
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  margin-bottom: 15px;
-}
-
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.review-product {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.review-content p {
-  margin: 0 0 10px;
-  color: #666;
-  line-height: 1.6;
-}
-
-.review-date {
-  font-size: 12px;
-  color: #999;
-}
 
 .addresses-list {
   display: flex;
@@ -1424,21 +967,10 @@ const getReservationStatusText = (status) => {
     width: 100%;
   }
   
-  .favorites-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  }
-  
-  .order-content,
-  .reservation-content,
   .security-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
-  }
-  
-  .order-info,
-  .reservation-actions {
-    text-align: left;
   }
 }
 </style>

@@ -1,7 +1,8 @@
 <!-- 支付成功页面 -->
 <template>
-  <div class="pay-success-page">
-    <div class="success-container">
+  <Layout>
+    <div class="pay-success-page">
+      <div class="success-container">
       <el-result
         icon="success"
         title="支付成功"
@@ -36,8 +37,9 @@
           </div>
         </template>
       </el-result>
+      </div>
     </div>
-  </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <script setup>
@@ -46,6 +48,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { api } from '../utils/api';
 import { getUserId } from '../utils/auth';
+import Layout from './Layout.vue';
 
 const route = useRoute();
 const router = useRouter();

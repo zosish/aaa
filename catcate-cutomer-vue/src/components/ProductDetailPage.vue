@@ -1,6 +1,6 @@
 <!-- 商品详情页面 -->
 <template>
-  <div class="product-detail-page">
+  <>
     <!-- 页面头部：标题+面包屑 -->
     <div class="page-header">
       <el-breadcrumb separator="/" class="breadcrumb">
@@ -196,7 +196,6 @@
           </template>
         </el-result>
       </div>
-    </div>
     <!-- 地址输入对话框 -->
   <el-dialog v-model="showAddressDialog" title="填写收货地址" width="500px" :before-close="handleAddressClose">
     <el-form :model="addressForm" :rules="addressRules" ref="addressFormRef" label-width="100px">
@@ -234,6 +233,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft } from '@element-plus/icons-vue';
 import { api } from '../utils/api';
 import { getUserId, isLoggedIn, getToken } from '../utils/auth';
+import Layout from './Layout.vue';
 
 // 路由相关
 const route = useRoute();

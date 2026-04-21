@@ -99,6 +99,12 @@ const routes = [
     name: 'MyReservations',
     component: () => import('@/components/MyReservationsPage.vue')
   },
+  // 我的评价页面
+  {
+    path: '/reviews',
+    name: 'MyReviews',
+    component: () => import('@/components/MyReviewsPage.vue')
+  },
   // 添加更多路由...
 ]
 

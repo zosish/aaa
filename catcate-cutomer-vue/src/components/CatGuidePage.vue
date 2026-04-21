@@ -1,6 +1,6 @@
 <!-- 猫咪图鉴 -->
 <template>
-    <div class="cat-gallery-page">
+  <Layout>
         <!-- 页面头部 -->
         <div class="page-header">
             <h1>猫咪图鉴</h1>
@@ -168,7 +168,7 @@
                 </el-row>
             </div>
         </el-dialog>
-    </div>
+  </Layout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
@@ -177,6 +177,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { User, Clock, Heart, Search, Refresh } from '@element-plus/icons-vue';
+import Layout from './Layout.vue';
 
 // 路由实例
 const router = useRouter();
