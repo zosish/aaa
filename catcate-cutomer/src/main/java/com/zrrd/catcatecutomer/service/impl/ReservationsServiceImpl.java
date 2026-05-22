@@ -35,45 +35,97 @@ public class ReservationsServiceImpl extends ServiceImpl<ReservationsMapper, Res
 
     @Override
     public List<ReservationVO> getReservationsByUserId(Long userId) {
-        QueryWrapper<Reservations> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId)
-                .orderByDesc("create_time");
+        System.out.println("=== 获取用户预约列表 ===");
+        System.out.println("用户ID: " + userId);
+        
+        try {
+            if (userId == null) {
+                System.err.println("用户ID为空");
+                return List.of();
+            }
+            
+            QueryWrapper<Reservations> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("user_id", userId)
+                    .orderByDesc("create_time");
 
-        List<Reservations> reservations = this.list(queryWrapper);
-
-        // 获取所有涉及的猫咪ID
-        List<Long> catIds = reservations.stream()
-                .map(Reservations::getCatId)
-                .filter(id -> id != null)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 批量查询猫咪信息
-        Map<Long, Cats> catMap;
-        if (!catIds.isEmpty()) {
-            List<Cats> cats = catsMapper.selectBatchIds(catIds);
-            catMap = cats.stream().collect(Collectors.toMap(Cats::getId, cat -> cat));
-        } else {
-            catMap = Map.of(); // 空映射
-        }
-
-        // 转换为VO对象
-        return reservations.stream().map(reservation -> {
-            ReservationVO vo = new ReservationVO();
-            BeanUtils.copyProperties(reservation, vo);
-
-            // 设置猫咪信息
-            Cats cat = catMap.get(reservation.getCatId());
-            if (cat != null) {
-                vo.setCatName(cat.getName());
-                vo.setCatPhoto(cat.getPhotoUrl());
-                vo.setCatBreed(cat.getBreed());
-                vo.setCatAge(cat.getAge());
-                vo.setCatGender(cat.getGender());
+            List<Reservations> reservations = this.list(queryWrapper);
+            
+            System.out.println("查询到预约数量: " + (reservations != null ? reservations.size() : 0));
+            
+            if (reservations == null || reservations.isEmpty()) {
+                System.out.println("没有预约记录，返回空列表");
+                return List.of();
             }
 
-            return vo;
-        }).collect(Collectors.toList());
+            List<Long> catIds = reservations.stream()
+                    .map(Reservations::getCatId)
+                    .filter(id -> id != null)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            System.out.println("涉及的猫咪ID: " + catIds);
+
+            Map<Long, Cats> catMap = buildCatMap(catIds);
+
+            List<ReservationVO> result = reservations.stream()
+                    .filter(reservation -> reservation != null)
+                    .map(reservation -> {
+                        try {
+                            ReservationVO vo = new ReservationVO();
+                            BeanUtils.copyProperties(reservation, vo);
+
+                            Cats cat = catMap.get(reservation.getCatId());
+                            if (cat != null) {
+                                vo.setCatName(cat.getName());
+                                vo.setCatPhoto(cat.getPhotoUrl());
+                                vo.setCatBreed(cat.getBreed());
+                                vo.setCatAge(cat.getAge());
+                                vo.setCatGender(cat.getGender());
+                            } else {
+                                System.out.println("未找到猫咪信息，catId: " + reservation.getCatId());
+                            }
+
+                            return vo;
+                        } catch (Exception e) {
+                            System.err.println("转换预约记录失败: " + e.getMessage());
+                            e.printStackTrace();
+                            return null;
+                        }
+                    })
+                    .filter(vo -> vo != null)
+                    .collect(Collectors.toList());
+            
+            System.out.println("转换完成，返回VO数量: " + result.size());
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("获取用户预约列表失败: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("获取预约列表失败: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<Long, Cats> buildCatMap(List<Long> catIds) {
+        if (catIds == null || catIds.isEmpty()) {
+            return Map.of();
+        }
+        
+        try {
+            List<Cats> cats = catsMapper.selectBatchIds(catIds);
+            System.out.println("查询到猫咪数量: " + (cats != null ? cats.size() : 0));
+            
+            if (cats != null && !cats.isEmpty()) {
+                return cats.stream()
+                        .filter(cat -> cat != null && cat.getId() != null)
+                        .collect(Collectors.toMap(Cats::getId, cat -> cat));
+            } else {
+                return Map.of();
+            }
+        } catch (Exception e) {
+            System.err.println("查询猫咪信息失败: " + e.getMessage());
+            e.printStackTrace();
+            return Map.of();
+        }
     }
 
     @Override
@@ -119,5 +171,31 @@ public class ReservationsServiceImpl extends ServiceImpl<ReservationsMapper, Res
         return reservations.stream()
                 .map(Reservations::getTimeSlot)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Long> getBookedTableIds(LocalDate reservationDate, String timeSlot) {
+        QueryWrapper<Reservations> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("table_id")
+                .eq("reservation_date", reservationDate)
+                .eq("time_slot", timeSlot)
+                .ne("status", "CANCELLED");
+
+        List<Reservations> reservations = this.list(queryWrapper);
+        return reservations.stream()
+                .map(Reservations::getTableId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isTableReserved(Long tableId, LocalDate reservationDate, String timeSlot) {
+        QueryWrapper<Reservations> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("table_id", tableId)
+                .eq("reservation_date", reservationDate)
+                .eq("time_slot", timeSlot)
+                .ne("status", "CANCELLED");
+
+        return this.count(queryWrapper) > 0;
     }
 }

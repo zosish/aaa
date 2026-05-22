@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/payment")
+@RequestMapping("/catcatecutomer/payment")
 @CrossOrigin("*")
 public class PaymentController {
 

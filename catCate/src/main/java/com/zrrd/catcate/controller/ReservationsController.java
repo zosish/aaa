@@ -64,7 +64,102 @@ public class ReservationsController {
     @PostMapping("/addOrUpdateReservation")
     public boolean addOrUpdateReservation(@RequestBody Reservations reservation) {
         System.out.println(reservation);
+        
+        // 检查时间冲突
+        if (hasTimeConflict(reservation)) {
+            System.out.println("时间冲突，拒绝预约！");
+            return false;
+        }
+        
         return reservationsService.saveOrUpdate(reservation);
+    }
+    
+    /**
+     * 检查时间冲突
+     */
+    private boolean hasTimeConflict(Reservations newReservation) {
+        // 查询该日期下的所有预约（排除已取消的和当前编辑的）
+        QueryWrapper<Reservations> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("reservation_date", newReservation.getReservationDate());
+        queryWrapper.ne("status", "CANCELLED");
+        
+        // 如果是编辑，排除当前预约
+        if (newReservation.getId() != null) {
+            queryWrapper.ne("id", newReservation.getId());
+        }
+        
+        List<Reservations> existingReservations = reservationsService.list(queryWrapper);
+        
+        // 解析新预约的时间段
+        String newTimeSlot = newReservation.getTimeSlot();
+        if (newTimeSlot == null || !newTimeSlot.contains("-")) {
+            return false;
+        }
+        
+        String[] newTimes = newTimeSlot.split("-");
+        if (newTimes.length != 2) {
+            return false;
+        }
+        
+        Integer newStartMinutes = convertToMinutes(newTimes[0]);
+        Integer newEndMinutes = convertToMinutes(newTimes[1]);
+        String newTableNumber = newReservation.getTableNumber();
+        
+        // 检查每个已有预约是否冲突
+        for (Reservations existing : existingReservations) {
+            String existingTimeSlot = existing.getTimeSlot();
+            String existingTableNumber = existing.getTableNumber();
+            
+            // 如果桌号不同，不冲突
+            if (newTableNumber == null || existingTableNumber == null) {
+                continue;
+            }
+            if (!newTableNumber.equals(existingTableNumber)) {
+                continue;
+            }
+            
+            // 解析已有预约的时间段
+            if (existingTimeSlot == null || !existingTimeSlot.contains("-")) {
+                continue;
+            }
+            
+            String[] existingTimes = existingTimeSlot.split("-");
+            if (existingTimes.length != 2) {
+                continue;
+            }
+            
+            Integer existingStartMinutes = convertToMinutes(existingTimes[0]);
+            Integer existingEndMinutes = convertToMinutes(existingTimes[1]);
+            
+            // 检查时间段是否重叠：新开始 < 已有结束 且 新结束 > 已有开始
+            if (newStartMinutes < existingEndMinutes && newEndMinutes > existingStartMinutes) {
+                System.out.println("检测到时间冲突：新预约 " + newTimeSlot + 
+                    " 桌号 " + newTableNumber + 
+                    " 与已有预约 " + existingTimeSlot + 
+                    " 桌号 " + existingTableNumber + 
+                    " 重叠！");
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 将 HH:mm 格式的时间转换为分钟数
+     */
+    private Integer convertToMinutes(String timeStr) {
+        try {
+            String[] parts = timeStr.split(":");
+            if (parts.length != 2) {
+                return 0;
+            }
+            int hours = Integer.parseInt(parts[0]);
+            int minutes = Integer.parseInt(parts[1]);
+            return hours * 60 + minutes;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     /**

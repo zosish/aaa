@@ -113,15 +113,7 @@ public class ReservationsController {
     private Map<String, Object> validateReservation(Reservations reservation) {
         Map<String, Object> result = new HashMap<>();
 
-        // 检查是否已存在相同日期的预约
-        if (reservationsService.hasExistingReservation(reservation.getUserId(), reservation.getReservationDate())) {
-            result.put("code", 400);
-            result.put("message", "您在该日期已有预约");
-            result.put("valid", false);
-            return result;
-        }
-
-        // 检查时间段冲突
+        // 检查时间段冲突（猫咪同一时间段只能被预约一次）
         if (reservationsService.hasTimeSlotConflict(reservation.getCatId(), reservation.getReservationDate(), reservation.getTimeSlot())) {
             result.put("code", 400);
             result.put("message", "该时间段已被预约");

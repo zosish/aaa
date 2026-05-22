@@ -190,8 +190,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ShoppingCart } from '@element-plus/icons-vue'
 import { api } from '../utils/api'
-import { getUserId, isLoggedIn } from '../utils/auth'
-import Layout from './Layout.vue'
+import { getUserId, isLoginValid, clearAuth } from '../utils/auth'
+import Layout from './AppLayout.vue'
 
 const router = useRouter()
 const cartItems = ref([])
@@ -323,8 +323,10 @@ const confirmAddress = async () => {
 
 onMounted(() => {
     // 检查登录状态
-    if (!isLoggedIn()) {
-        ElMessage.warning('请先登录')
+    if (!isLoginValid()) {
+        // 登录过期或未登录，跳转到登录页面
+        ElMessage.warning('登录已过期，请重新登录')
+        clearAuth()
         router.push('/login')
         return
     }
@@ -644,6 +646,15 @@ const removeItem = async (itemId) => {
 const checkout = async () => {
     if (selectedItems.value.length === 0) return
 
+    // 检查登录状态
+    if (!isLoginValid()) {
+        // 登录过期或未登录，跳转到登录页面
+        ElMessage.warning('登录已过期，请重新登录')
+        clearAuth()
+        router.push('/login')
+        return
+    }
+
     // 显示地址填写对话框
     showAddressDialog.value = true
     
@@ -657,6 +668,15 @@ const checkout = async () => {
 const confirmPayment = async () => {
     if (!orderNumber.value) {
         ElMessage.error('订单信息不完整')
+        return
+    }
+
+    // 检查登录状态
+    if (!isLoginValid()) {
+        // 登录过期或未登录，跳转到登录页面
+        ElMessage.warning('登录已过期，请重新登录')
+        clearAuth()
+        router.push('/login')
         return
     }
 
@@ -692,8 +712,8 @@ const confirmPayment = async () => {
             const checkPaymentWindow = setInterval(() => {
                 if (paymentWindow.closed) {
                     clearInterval(checkPaymentWindow);
-                    // 跳转到支付成功页面
-                    router.push(`/PaymentSuccessfulPage?orderNumber=${orderNumber.value}`);
+                    // 跳转到支付成功页面，传递订单号和支付金额
+                    router.push(`/PaymentSuccessfulPage?orderNumber=${orderNumber.value}&total_amount=${paymentAmount.value}`);
                 }
             }, 1000);
         } else if (response && response.code === 200) {

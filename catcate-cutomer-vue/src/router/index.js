@@ -27,6 +27,17 @@ const routes = [
     name: 'ReservationActivityPage',
     component: () => import('@/components/ReservationActivityPage.vue')
   },
+  // 咖啡菜单页面
+  {
+    path: '/CateringMenuPage',
+    name: 'CateringMenuPage',
+    component: () => import('@/components/CateringMenuPage.vue')
+  },
+  // {
+  //   path: '/coffee',
+  //   name: 'CoffeeMenu',
+  //   component: () => import('@/components/CoffeeMenuPage.vue')
+  // },
   // 周边商品商品页面
   {
     path: '/ProductPage',

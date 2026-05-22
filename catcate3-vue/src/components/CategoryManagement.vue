@@ -1,6 +1,6 @@
 <!-- 分类管理 -->
 <template>
-    <div class="category-management">
+    <AdminLayout>
         <!-- 页面标题和操作区 -->
         <div class="page-header">
             <h1>商品分类管理</h1>
@@ -183,14 +183,7 @@
                 </el-table-column>
             </el-table>
 
-            <!-- 分页 -->
-            <div class="pagination">
-                <el-pagination v-model:current-page="pagination.currentPage" v-model:page-size="pagination.pageSize"
-                    :page-sizes="[10, 20, 50, 100]" :total="pagination.total"
-                    layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-                    @current-change="handleCurrentChange">
-                </el-pagination>
-            </div>
+
         </el-card>
 
         <!-- 新增/编辑分类弹窗 -->
@@ -354,7 +347,7 @@
                 </el-button>
             </template>
         </el-dialog>
-    </div>
+    </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
@@ -375,6 +368,7 @@ import {
     getCategoryTagType,
     debounce
 } from '../utils/categoryUtils';
+import AdminLayout from './AdminLayout.vue';
 
 // 状态管理
 const loading = ref(false);
@@ -415,10 +409,10 @@ const searchForm = reactive({
     level: ''
 });
 
-// 分页配置
+// 分页配置（保留用于兼容性）
 const pagination = reactive({
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 1000,
     total: 0
 });
 
@@ -545,7 +539,6 @@ const formRules = reactive({
 
 // 防抖搜索
 const handleSearchDebounced = debounce(() => {
-    pagination.currentPage = 1;
     fetchCategoryList();
 }, 500);
 
@@ -621,6 +614,7 @@ const findCategoryPath = (categoryId) => {
 const fetchCategoryList = async () => {
     loading.value = true;
     try {
+        // 获取所有分类（不分页），因为要显示树形结构
         const res = await fetch("http://localhost:8081/catcate/productCategories/selectList", {
             method: "POST",
             headers: {
@@ -630,8 +624,8 @@ const fetchCategoryList = async () => {
                 name: searchForm.name,
                 code: searchForm.code,
                 isActive: searchForm.isActive,
-                pageNum: pagination.currentPage,
-                pageSize: pagination.pageSize
+                pageNum: 1,
+                pageSize: 1000 // 获取足够多的记录
             })
         });
 
@@ -689,7 +683,6 @@ const fetchParentCategoryOptions = async () => {
  * 搜索功能
  */
 const handleSearch = () => {
-    pagination.currentPage = 1;
     fetchCategoryList();
     ElMessage.info('正在搜索符合条件的分类...');
 };
@@ -702,23 +695,21 @@ const handleReset = () => {
     searchForm.code = '';
     searchForm.isActive = '';
     searchForm.level = '';
-    pagination.currentPage = 1;
     fetchCategoryList();
     ElMessage.success('搜索条件已重置');
 };
 
 /**
- * 分页处理
+ * 分页处理（保留用于兼容性）
  */
 const handleSizeChange = (size) => {
-    pagination.pageSize = size;
-    pagination.currentPage = 1;
-    fetchCategoryList();
+    // 不再使用分页，但保留函数避免错误
+    ElMessage.info('已禁用分页，显示所有分类');
 };
 
 const handleCurrentChange = (page) => {
-    pagination.currentPage = page;
-    fetchCategoryList();
+    // 不再使用分页，但保留函数避免错误
+    ElMessage.info('已禁用分页，显示所有分类');
 };
 
 /**

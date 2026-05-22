@@ -9,7 +9,7 @@ const routes = [
     component:  ()=>import('@/components/LoginPage.vue')// 根据实际情况设置组件
   },
   {
-    path: '/HomePage',
+    path: '/admin/HomePage',
     name: 'Home',
     component: () => import('@/components/HomePage.vue')
   },

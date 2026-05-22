@@ -46,7 +46,7 @@ public class Reviews implements Serializable {
     /**
      * 评分（1-5分）
      */
-    private Integer rating;
+    private Float rating;
 
     /**
      * 评价内容
@@ -128,11 +128,11 @@ public class Reviews implements Serializable {
         this.orderId = orderId;
     }
 
-    public Integer getRating() {
+    public Float getRating() {
         return rating;
     }
 
-    public void setRating(Integer rating) {
+    public void setRating(Float rating) {
         this.rating = rating;
     }
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="product-management">
+    <AdminLayout>
         <!-- 页面标题和操作区 -->
         <div class="page-header">
             <h1>商品管理</h1>
@@ -281,12 +281,13 @@
                 </el-button>
             </template>
         </el-dialog>
-    </div>
+    </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <script setup>
 import { ref, reactive, onMounted, nextTick, computed } from 'vue';
 import { ElMessage, ElMessageBox, ElImage } from 'element-plus';
+import AdminLayout from './AdminLayout.vue';
 import { Plus, Search, Eye, Edit, Delete, Check, Close, Refresh, Shop, Upload } from '@element-plus/icons-vue';
 
 // 状态管理

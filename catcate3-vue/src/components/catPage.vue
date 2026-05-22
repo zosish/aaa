@@ -1,5 +1,5 @@
 <template>
-  <div class="cat-management">
+  <AdminLayout>
     <!-- 页面标题和操作区 -->
     <div class="page-header">
       <h1>猫咪管理</h1>
@@ -216,7 +216,7 @@
       </template>
     </el-dialog>
  
-  </div>
+  </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <script setup>
@@ -228,6 +228,7 @@ import {
   // columnAlignment, 
   ElMessage, ElMessageBox
 } from 'element-plus';
+import AdminLayout from './AdminLayout.vue';
 import {
   //   Plus, Search, Eye, Edit, Delete, 
   //   Check, Close 
@@ -570,12 +571,13 @@ const handleSaveCat = async () => {
       isActive: catForm.isActive === '1' ? 1 : 0
     };
 
-    // 设置时间戳
+    // 设置时间戳 - 格式化为 yyyy-MM-dd HH:mm:ss
     const now = new Date();
+    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     if (dialogType.value === 'add') {
-      catData.createTime = now;
+      catData.createTime = formattedDate;
     }
-    catData.updateTime = now;
+    catData.updateTime = formattedDate;
 
     const response = await fetch('http://localhost:8081/catcate/cats/addOrUpdate', {
       method: 'POST',

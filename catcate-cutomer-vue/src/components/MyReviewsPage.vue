@@ -15,7 +15,7 @@
     <div class="filter-section">
       <el-row :gutter="20" align="middle">
         <el-col :span="8">
-          <el-input v-model="searchKeyword" placeholder="搜索评价内容或商品名称..." clearable @keyup.enter="searchReviews">
+          <el-input v-model="searchKeyword" placeholder="搜索评价内容或订单号..." clearable @keyup.enter="searchReviews">
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
@@ -52,17 +52,20 @@
     <div class="reviews-container">
       <el-table :data="paginatedReviews" v-loading="loading" stripe style="width: 100%">
         <el-table-column prop="id" label="评价编号" width="120"></el-table-column>
-        <el-table-column prop="productName" label="商品名称" width="180">
+        <el-table-column prop="orderNumber" label="评价订单号" width="180">
           <template #default="scope">
             <div class="product-info">
               <el-avatar :size="32" :src="scope.row.productImage" shape="square" v-if="scope.row.productImage"></el-avatar>
-              <span class="product-name">{{ scope.row.productName }}</span>
+              <span class="product-name">{{ scope.row.orderNumber }}</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="rating" label="评分" width="100">
+        <el-table-column prop="rating" label="评分" width="120">
           <template #default="scope">
-            <el-rate :value="scope.row.rating" disabled :max="5" :show-text="false"></el-rate>
+            <div>
+              <el-rate v-model="scope.row.rating" disabled :max="5" :show-text="false"></el-rate>
+              <span style="margin-left: 10px;">{{ scope.row.rating }}</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="content" label="评价内容">
@@ -113,14 +116,14 @@
           <el-descriptions-item label="评价编号">
             {{ selectedReview.id }}
           </el-descriptions-item>
-          <el-descriptions-item label="商品信息">
+          <el-descriptions-item label="订单信息">
             <div class="product-info">
               <el-avatar :size="40" :src="selectedReview.productImage" shape="square" v-if="selectedReview.productImage"></el-avatar>
-              <span class="product-name">{{ selectedReview.productName }}</span>
+              <span class="product-name">{{ selectedReview.orderNumber }}</span>
             </div>
           </el-descriptions-item>
           <el-descriptions-item label="评分">
-            <el-rate :value="selectedReview.rating" disabled :max="5" :show-text="true"></el-rate>
+            <el-rate v-model="selectedReview.rating" disabled :max="5" :show-text="true"></el-rate>
           </el-descriptions-item>
           <el-descriptions-item label="评价内容">
             {{ selectedReview.content }}
@@ -187,8 +190,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Delete } from '@element-plus/icons-vue'
 import { api } from '@/utils/api'
-import { getUserId, isLoggedIn } from '@/utils/auth'
-import Layout from './Layout.vue'
+import { getUserId, isLoginValid } from '@/utils/auth'
+import Layout from './AppLayout.vue'
 
 const router = useRouter()
 
@@ -221,7 +224,7 @@ const filteredReviews = computed(() => {
     const keyword = searchKeyword.value.toLowerCase()
     result = result.filter(review => 
       review.content.toLowerCase().includes(keyword) || 
-      review.productName.toLowerCase().includes(keyword)
+      review.orderNumber.toLowerCase().includes(keyword)
     )
   }
 
@@ -257,8 +260,8 @@ const loadReviews = async () => {
     loading.value = true
 
     // 检查登录状态
-    if (!isLoggedIn()) {
-      ElMessage.warning('请先登录')
+    if (!isLoginValid()) {
+      ElMessage.warning('登录已过期，请重新登录')
       router.push('/login')
       return
     }
@@ -269,13 +272,41 @@ const loadReviews = async () => {
       return
     }
 
-    // 调用API获取评价列表
-    const response = await api.get(`/reviews/user/${userId}`)
+    // 使用fetch直接调用后端API获取评价列表
+    const response = await fetch(`http://localhost:8083/catcatecutomer/reviews/user/${userId}`)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
 
-    if (response.code === 200) {
-      reviews.value = response.data || []
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      // 提取有评价的订单ID列表（去重）
+      const reviewOrderIds = [...new Set((result.data || []).map(r => r.orderId).filter(id => id))]
+      
+      // 只查询这些有评价的订单
+      const orderNumbers = await fetchOrdersByIds(reviewOrderIds, userId)
+      
+      reviews.value = (result.data || []).map(review => {
+        const rating = Number(review.rating) || 5
+        const orderNumber = orderNumbers[review.orderId] || review.orderNumber || review.order_no || `订单ID: ${review.orderId}`
+        return {
+          id: review.id || '',
+          productName: review.productName || '未知商品',
+          productImage: review.productImage || '',
+          orderId: review.orderId || '',
+          orderNumber: orderNumber,
+          rating: Math.max(1, Math.min(5, rating)),
+          content: review.content || '',
+          createTime: review.createTime || new Date().toISOString(),
+          status: review.status || 'PENDING',
+          replyContent: review.replyContent || '',
+          replyTime: review.replyTime || ''
+        }
+      })
     } else {
-      throw new Error(response.message || '获取评价列表失败')
+      throw new Error(result.message || '获取评价列表失败')
     }
   } catch (error) {
     console.error('获取评价列表失败:', error)
@@ -284,6 +315,41 @@ const loadReviews = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 根据订单ID列表查询订单号
+const fetchOrdersByIds = async (orderIds, userId) => {
+  const orderNumbers = {}
+  
+  if (!orderIds || orderIds.length === 0) {
+    return orderNumbers
+  }
+  
+  try {
+    // 获取用户的订单列表，然后筛选出需要的订单
+    const response = await fetch(`http://localhost:8083/catcatecutomer/orders/user/${userId}`)
+    
+    if (response.ok) {
+      const result = await response.json()
+      
+      if (result.code === 200 && result.data) {
+        const orders = Array.isArray(result.data) ? result.data : (result.data.records || [])
+        
+        // 只保留有评价的订单
+        const filteredOrders = orders.filter(order => orderIds.includes(order.id))
+        
+        filteredOrders.forEach(order => {
+          if (order.id && (order.orderNumber || order.order_no)) {
+            orderNumbers[order.id] = order.orderNumber || order.order_no
+          }
+        })
+      }
+    }
+  } catch (error) {
+    console.error('获取订单失败:', error)
+  }
+  
+  return orderNumbers
 }
 
 // 搜索评价
@@ -331,7 +397,7 @@ const handleDetailClose = () => {
 const editReview = (review) => {
   editForm.value = {
     id: review.id,
-    rating: review.rating,
+    rating: parseInt(review.rating),
     content: review.content,
     images: review.images || []
   }
@@ -431,6 +497,7 @@ const formatDate = (dateString) => {
 const getStatusText = (status) => {
   const statusMap = {
     PUBLISHED: '已发布',
+    APPROVED: '已审核',
     PENDING: '待审核',
     REJECTED: '已驳回'
   }
@@ -441,6 +508,7 @@ const getStatusText = (status) => {
 const getStatusTagType = (status) => {
   const typeMap = {
     PUBLISHED: 'success',
+    APPROVED: 'success',
     PENDING: 'warning',
     REJECTED: 'danger'
   }

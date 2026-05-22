@@ -48,7 +48,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { api } from '../utils/api';
 import { getUserId } from '../utils/auth';
-import Layout from './Layout.vue';
+import Layout from './AppLayout.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -91,9 +91,15 @@ const getOrderDetails = async (orderNumber) => {
       const orderData = response.data;
       // 更新订单信息
       if (orderData) {
+        // 确保金额正确显示，处理0值的情况
+        let amount = orderInfo.value.amount;
+        if (orderData.totalAmount !== undefined && orderData.totalAmount !== null) {
+          amount = orderData.totalAmount;
+        }
+        
         orderInfo.value = {
           orderNumber: orderData.orderNumber,
-          amount: orderData.totalAmount || orderInfo.value.amount,
+          amount: amount,
           payTime: orderData.paymentTime || orderInfo.value.payTime,
           paymentMethod: orderData.paymentMethod || '支付宝'
         };

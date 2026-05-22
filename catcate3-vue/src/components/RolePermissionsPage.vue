@@ -1,6 +1,6 @@
 <!-- 角色权限管理页面 -->
 <template>
-    <div class="permission-management">
+    <AdminLayout>
         <!-- 页面标题和操作区 -->
         <div class="page-header">
             <h2>角色权限管理</h2>
@@ -110,7 +110,7 @@
                 <el-button type="primary" @click="submitPermissionAssign">保存权限</el-button>
             </template>
         </el-dialog>
-    </div>
+    </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
@@ -119,6 +119,7 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox, ElTree } from 'element-plus';
 import { Plus, Edit, Delete, Key, Search } from '@element-plus/icons-vue';
+import AdminLayout from './AdminLayout.vue';
 
 // 路由实例
 const router = useRouter();

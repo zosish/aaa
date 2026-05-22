@@ -155,7 +155,7 @@ public class ProductsServiceImpl extends ServiceImpl<ProductsMapper, Products> i
 
             if (!reviews.isEmpty()) {
                 double avgRating = reviews.stream()
-                        .mapToInt(Reviews::getRating)
+                        .mapToDouble(Reviews::getRating)
                         .average()
                         .orElse(0.0);
 

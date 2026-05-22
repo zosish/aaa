@@ -86,17 +86,33 @@
               :disabled-date="disabledDate"
               style="width: 100%"
               value-format="YYYY-MM-DD"
+              @change="onDateChange"
             />
           </el-form-item>
           
-          <el-form-item label="预约时间" prop="reservationTime">
+          <el-form-item label="预约开始时间" prop="startTime">
             <el-time-picker
-              v-model="timeForm.reservationTime"
-              placeholder="请选择预约时间"
+              v-model="timeForm.startTime"
+              placeholder="请选择开始时间"
               format="HH:mm"
               value-format="HH:mm"
               style="width: 100%"
             />
+          </el-form-item>
+          
+          <el-form-item label="预约时长" prop="duration">
+            <el-select v-model="timeForm.duration" placeholder="请选择时长" style="width: 100%">
+              <el-option label="30分钟" :value="30"></el-option>
+              <el-option label="60分钟" :value="60"></el-option>
+              <el-option label="90分钟" :value="90"></el-option>
+              <el-option label="120分钟" :value="120"></el-option>
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="访客人数" prop="visitorCount">
+            <el-input-number v-model.number="timeForm.visitorCount" :min="1" :max="10" label="人数"
+              placeholder="请输入人数" style="width: 100%">
+            </el-input-number>
           </el-form-item>
           
           <el-form-item label="备注信息">
@@ -124,6 +140,56 @@
       </template>
     </el-dialog>
 
+    <!-- 桌号选择弹窗 -->
+    <el-dialog v-model="showTableSelectionDialog" title="选择桌号" width="500px" :close-on-click-modal="false">
+      <div v-if="selectedPackage && availableTables.length > 0" class="table-selection">
+        <div class="package-summary">
+          <h3>{{ selectedPackage.title }}</h3>
+          <p class="info">日期：{{ confirmedReservation.reservationDate }}</p>
+          <p class="info">时间：{{ confirmedReservation.startTime }} ({{ confirmedReservation.duration }}分钟)</p>
+          <p class="info">人数：{{ confirmedReservation.visitorCount }}人</p>
+        </div>
+        
+        <div class="table-grid">
+          <div 
+            v-for="table in availableTables" 
+            :key="table.id"
+            class="table-item"
+            :class="{ selected: selectedTable?.id === table.id }"
+            @click="selectTable(table)"
+          >
+            <div class="table-number">{{ table.tableNumber }}</div>
+            <div class="table-capacity">{{ table.capacity }}人桌</div>
+          </div>
+        </div>
+        
+        <div v-if="!selectedTable" class="warning-text">
+          <el-icon><AlertCircle /></el-icon>
+          请选择一个桌号
+        </div>
+      </div>
+      
+      <div v-else class="empty-state">
+        <el-empty description="当前时段暂无可用桌号">
+          <el-button type="primary" @click="goBackToTimeSelection">重新选择时间</el-button>
+        </el-empty>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="goBackToTimeSelection">上一步</el-button>
+          <el-button 
+            type="primary" 
+            @click="confirmTableSelection" 
+            :loading="tableSelecting"
+            :disabled="!selectedTable"
+          >
+            确认桌号
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- 套餐支付弹窗 -->
     <el-dialog v-model="showPaymentDialog" title="套餐支付" width="500px">
       <div v-if="selectedPackage" class="package-payment">
@@ -132,7 +198,9 @@
           <p>{{ selectedPackage.content }}</p>
           <div class="reservation-summary">
             <p><strong>预约日期：</strong>{{ confirmedReservation.reservationDate }}</p>
-            <p><strong>预约时间：</strong>{{ confirmedReservation.reservationTime }}</p>
+            <p><strong>预约时间：</strong>{{ confirmedReservation.startTime }} ({{ confirmedReservation.duration }}分钟)</p>
+            <p><strong>访客人数：</strong>{{ confirmedReservation.visitorCount }}人</p>
+            <p><strong>桌号：</strong>{{ confirmedReservation.tableNumber }}</p>
             <p v-if="confirmedReservation.notes"><strong>备注：</strong>{{ confirmedReservation.notes }}</p>
           </div>
           <div class="package-meta">
@@ -153,7 +221,7 @@
       
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="showPaymentDialog = false">取消</el-button>
+          <el-button @click="cancelPayment">取消</el-button>
           <el-button 
             type="primary" 
             @click="proceedToPayment" 
@@ -172,10 +240,10 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Check, Clock } from '@element-plus/icons-vue';
+import { Check, Clock, AlertCircle } from '@element-plus/icons-vue';
 import { api } from '@/utils/api';
-import { getUserId, isLoggedIn } from '@/utils/auth';
-import Layout from './Layout.vue';
+import { getUserId, getUserInfo, isLoggedIn } from '@/utils/auth';
+import Layout from './AppLayout.vue';
 
 // 路由实例
 const router = useRouter();
@@ -183,11 +251,15 @@ const router = useRouter();
 // 状态管理
 const selectingPackage = ref(false);
 const timeSelecting = ref(false);
+const tableSelecting = ref(false);
+const tableLoading = ref(false);
 const paymentLoading = ref(false);
 const showTimeSelectionDialog = ref(false);
+const showTableSelectionDialog = ref(false);
 const showPaymentDialog = ref(false);
 const showSuccessDialog = ref(false);
 const selectedPackage = ref(null);
+const selectedTable = ref(null);
 const loadingPackages = ref(false);
 const selectedPaymentMethod = ref('ALIPAY');
 const orderNumber = ref('');
@@ -196,22 +268,38 @@ const orderNumber = ref('');
 const isLogin = ref(isLoggedIn());
 const currentUserId = ref(getUserId());
 
+const getUserUsername = () => {
+  const userInfo = getUserInfo();
+  return userInfo ? userInfo.username || '' : '';
+};
+
+const getUserPhone = () => {
+  const userInfo = getUserInfo();
+  return userInfo ? userInfo.phone || userInfo.phoneNumber || '' : '';
+};
+
 // 数据列表
 const packageActivities = ref([]);
+const availableTables = ref([]);
 
 // 时间选择表单
 const timeFormRef = ref(null);
 const timeForm = reactive({
   reservationDate: '',
-  reservationTime: '',
+  startTime: '',
   duration: 60,
+  visitorCount: 1,
   notes: ''
 });
 
 // 确认的预约信息
 const confirmedReservation = reactive({
   reservationDate: '',
-  reservationTime: '',
+  startTime: '',
+  duration: 60,
+  visitorCount: 1,
+  tableId: null,
+  tableNumber: '',
   notes: ''
 });
 
@@ -220,8 +308,15 @@ const timeRules = reactive({
   reservationDate: [
     { required: true, message: '请选择预约日期', trigger: 'change' }
   ],
-  reservationTime: [
-    { required: true, message: '请选择预约时间', trigger: 'change' }
+  startTime: [
+    { required: true, message: '请选择开始时间', trigger: 'change' }
+  ],
+  duration: [
+    { required: true, message: '请选择预约时长', trigger: 'change' }
+  ],
+  visitorCount: [
+    { required: true, message: '请输入访客人数', trigger: 'change' },
+    { type: 'number', min: 1, max: 10, message: '人数应在1-10人之间', trigger: 'change' }
   ]
 });
 
@@ -312,6 +407,12 @@ const disabledDate = (date) => {
   return date.getTime() < today.getTime();
 };
 
+// 日期变化处理
+const onDateChange = () => {
+  // 日期变化时重置时间选择
+  timeForm.startTime = '';
+};
+
 // 选择套餐
 const selectPackage = async (packageActivity) => {
   if (!isLogin.value) {
@@ -326,16 +427,82 @@ const selectPackage = async (packageActivity) => {
     // 重置表单
     Object.assign(timeForm, {
       reservationDate: '',
-      reservationTime: '',
+      startTime: '',
       duration: 60,
+      visitorCount: 1,
       notes: ''
     });
+    selectedTable.value = null;
+    availableTables.value = [];
     showTimeSelectionDialog.value = true;
   } catch (error) {
     ElMessage.error('选择套餐失败');
     console.error(error);
   } finally {
     selectingPackage.value = false;
+  }
+};
+
+// 计算时间段 (开始时间-结束时间)
+const calculateTimeSlot = (startTime, duration) => {
+  if (!startTime || !duration) return '';
+  
+  const [hours, minutes] = startTime.split(':').map(Number);
+  const startDate = new Date();
+  startDate.setHours(hours, minutes, 0, 0);
+  
+  const endDate = new Date(startDate.getTime() + duration * 60000);
+  const endHours = endDate.getHours().toString().padStart(2, '0');
+  const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+  
+  return `${startTime}-${endHours}:${endMinutes}`;
+};
+
+// 加载可用桌号
+const loadAvailableTables = async () => {
+  if (!timeForm.reservationDate || !timeForm.startTime || !timeForm.duration) {
+    return;
+  }
+  
+  const timeSlot = calculateTimeSlot(timeForm.startTime, timeForm.duration);
+  
+  tableLoading.value = true;
+  try {
+    const response = await api.get('/tables/available/by-time', {
+      params: {
+        reservationDate: timeForm.reservationDate,
+        timeSlot: timeSlot
+      }
+    });
+    
+    if (response.code === 200 && response.data && response.data.length > 0) {
+      availableTables.value = response.data;
+      console.log('可用桌号:', availableTables.value);
+    } else {
+      // 如果API返回空，使用默认数据
+      availableTables.value = [
+        { id: 1, tableNumber: '1号桌', capacity: 2, status: 'AVAILABLE' },
+        { id: 2, tableNumber: '2号桌', capacity: 2, status: 'AVAILABLE' },
+        { id: 3, tableNumber: '3号桌', capacity: 4, status: 'AVAILABLE' },
+        { id: 4, tableNumber: '4号桌', capacity: 4, status: 'AVAILABLE' },
+        { id: 5, tableNumber: '5号桌', capacity: 6, status: 'AVAILABLE' },
+        { id: 6, tableNumber: 'A1包厢', capacity: 8, status: 'AVAILABLE' }
+      ];
+    }
+  } catch (error) {
+    console.error('加载可用桌号失败:', error);
+    // API调用失败时使用默认数据
+    availableTables.value = [
+      { id: 1, tableNumber: '1号桌', capacity: 2, status: 'AVAILABLE' },
+      { id: 2, tableNumber: '2号桌', capacity: 2, status: 'AVAILABLE' },
+      { id: 3, tableNumber: '3号桌', capacity: 4, status: 'AVAILABLE' },
+      { id: 4, tableNumber: '4号桌', capacity: 4, status: 'AVAILABLE' },
+      { id: 5, tableNumber: '5号桌', capacity: 6, status: 'AVAILABLE' },
+      { id: 6, tableNumber: 'A1包厢', capacity: 8, status: 'AVAILABLE' }
+    ];
+    ElMessage.warning('使用示例桌号数据，请确保后端服务已启动');
+  } finally {
+    tableLoading.value = false;
   }
 };
 
@@ -347,12 +514,66 @@ const confirmTimeSelection = async () => {
     await timeFormRef.value.validate();
     
     // 保存预约信息
-    Object.assign(confirmedReservation, timeForm);
+    Object.assign(confirmedReservation, {
+      reservationDate: timeForm.reservationDate,
+      startTime: timeForm.startTime,
+      duration: timeForm.duration,
+      visitorCount: timeForm.visitorCount,
+      notes: timeForm.notes
+    });
+    
+    // 加载可用桌号
+    await loadAvailableTables();
+    
+    if (availableTables.value.length === 0) {
+      ElMessage.warning('当前时间暂无可用桌号，请选择其他时间');
+      return;
+    }
+    
     showTimeSelectionDialog.value = false;
-    showPaymentDialog.value = true;
+    showTableSelectionDialog.value = true;
   } catch (error) {
     ElMessage.error('请完善预约信息');
   }
+};
+
+// 选择桌号
+const selectTable = (table) => {
+  selectedTable.value = table;
+};
+
+// 确认桌号选择
+const confirmTableSelection = () => {
+  if (!selectedTable.value) {
+    ElMessage.warning('请选择一个桌号');
+    return;
+  }
+  
+  confirmedReservation.tableId = selectedTable.value.id;
+  confirmedReservation.tableNumber = selectedTable.value.tableNumber;
+  
+  showTableSelectionDialog.value = false;
+  showPaymentDialog.value = true;
+};
+
+// 返回时间选择
+const goBackToTimeSelection = () => {
+  showTableSelectionDialog.value = false;
+  showTimeSelectionDialog.value = true;
+};
+
+// 取消支付
+const cancelPayment = () => {
+  ElMessageBox.confirm('确定要取消支付吗？预约信息将被保留', '取消支付', {
+    confirmButtonText: '确定取消',
+    cancelButtonText: '继续支付',
+    type: 'warning'
+  }).then(() => {
+    showPaymentDialog.value = false;
+    showTableSelectionDialog.value = true;
+  }).catch(() => {
+    // 用户选择继续支付
+  });
 };
 
 // 进行支付
@@ -365,10 +586,11 @@ const proceedToPayment = async () => {
   paymentLoading.value = true;
   try {
     // 创建订单
+    const timeSlot = calculateTimeSlot(confirmedReservation.startTime, confirmedReservation.duration);
     const orderData = {
       userId: currentUserId.value,
       totalAmount: selectedPackage.value.setmealPrice,
-      customerNotes: `套餐预约：${selectedPackage.value.title} | 日期：${confirmedReservation.reservationDate} | 时间：${confirmedReservation.reservationTime}`,
+      customerNotes: `套餐预约：${selectedPackage.value.title} | 日期：${confirmedReservation.reservationDate} | 时间：${confirmedReservation.startTime} (${confirmedReservation.duration}分钟) | 桌号：${confirmedReservation.tableNumber}`,
       items: [{
         productId: selectedPackage.value.id,
         productName: selectedPackage.value.title,
@@ -390,13 +612,19 @@ const proceedToPayment = async () => {
 
     orderNumber.value = orderResult.data.orderNumber;
 
-    // 创建预约记录
+    // 创建预约记录（使用正确的日期格式 yyyy-MM-dd HH:mm:ss）
     const reservationData = {
       userId: currentUserId.value,
+      username: getUserUsername(),
+      phone: getUserPhone(),
       activityId: selectedPackage.value.id,
       reservationDate: confirmedReservation.reservationDate,
-      reservationTime: `${confirmedReservation.reservationDate} ${confirmedReservation.reservationTime}:00`,
+      timeSlot: timeSlot,
+      reservationTime: `${confirmedReservation.reservationDate} ${confirmedReservation.startTime}:00`,
       duration: confirmedReservation.duration,
+      visitorCount: confirmedReservation.visitorCount,
+      tableId: confirmedReservation.tableId,
+      tableNumber: confirmedReservation.tableNumber,
       status: 'PENDING',
       userNotes: confirmedReservation.notes || ''
     };
@@ -435,7 +663,6 @@ const proceedToPayment = async () => {
             paymentWindow.document.close();
             ElMessage.success('正在跳转到支付页面...');
             showPaymentDialog.value = false;
-            // 支付成功后显示成功弹窗
             setTimeout(() => {
               showSuccessDialog.value = true;
             }, 2000);
@@ -452,7 +679,6 @@ const proceedToPayment = async () => {
           throw new Error('支付表单格式错误');
         }
       } else {
-        // 其他情况直接显示成功
         ElMessage.success('支付成功！');
         showPaymentDialog.value = false;
         showSuccessDialog.value = true;
@@ -639,6 +865,62 @@ const proceedToPayment = async () => {
 /* 时间选择弹窗样式 */
 .time-selection {
   padding: 20px 0;
+}
+
+/* 桌号选择弹窗样式 */
+.table-selection {
+  padding: 20px 0;
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.table-item {
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+.table-item:hover {
+  border-color: #ff9800;
+  background-color: #fff8f0;
+}
+
+.table-item.selected {
+  border-color: #ff9800;
+  background-color: #fff3e0;
+  box-shadow: 0 0 10px rgba(255, 152, 0, 0.2);
+}
+
+.table-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #5d4037;
+  margin-bottom: 5px;
+}
+
+.table-capacity {
+  font-size: 14px;
+  color: #795548;
+}
+
+.warning-text {
+  text-align: center;
+  color: #e65100;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.warning-text .el-icon {
+  margin-right: 5px;
 }
 
 .package-summary {

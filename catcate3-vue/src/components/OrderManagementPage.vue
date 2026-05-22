@@ -1,6 +1,6 @@
 <!-- 订单管理 -->
  <template>
-  <div class="order-management">
+  <AdminLayout>
     <div class="page-header">
       <h1>订单管理</h1>
       <div class="header-actions">
@@ -227,12 +227,13 @@
         <el-button @click="dialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
-  </div>
+  </AdminLayout>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import AdminLayout from './AdminLayout.vue'
 import {
   Warning,
   Coin,

@@ -177,7 +177,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { User, Clock, Heart, Search, Refresh } from '@element-plus/icons-vue';
-import Layout from './Layout.vue';
+import Layout from './AppLayout.vue';
 
 // 路由实例
 const router = useRouter();

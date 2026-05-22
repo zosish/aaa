@@ -1,14 +1,14 @@
-<!-- 商品页面 -->
+<!-- 宠物用品页面 -->
 <template>
   <Layout>
     <!-- 页面头部：标题+面包屑 -->
     <div class="page-header">
       <el-breadcrumb separator="/" class="breadcrumb">
         <el-breadcrumb-item @click="$router.push('/home')">首页</el-breadcrumb-item>
-        <el-breadcrumb-item>周边商品</el-breadcrumb-item>
+        <el-breadcrumb-item>宠物用品</el-breadcrumb-item>
       </el-breadcrumb>
-      <h1>周边商品</h1>
-      <p>精选猫咪主题周边，给你和猫咪更好的体验</p>
+      <h1>宠物用品</h1>
+      <p>精选猫咪用品，给猫咪更好的生活体验</p>
     </div>
 
     <!-- 筛选区域：分类+排序 -->
@@ -42,9 +42,6 @@
           <label class="filter-label">商品搜索</label>
           <el-input v-model="searchKeyword" placeholder="请输入商品名称" class="search-input" clearable @clear="onSearchClear"
             @keyup.enter="onSearch">
-            <!-- <template #append>
-              <el-button icon="Search" @click="onSearch" />
-            </template> -->
           </el-input>
         </div>
       </div>
@@ -54,7 +51,7 @@
     <section class="section products-section">
       <!-- 筛选结果提示 -->
       <div class="result-tip">
-        共找到 <span class="tip-count">{{ totalProducts }}</span> 件商品
+        共找到 <span class="tip-count">{{ totalProducts }}</span> 件宠物用品
         <span v-if="selectedCate !== 'all'">（分类：{{ getCurrentCategoryName() }}）</span>
       </div>
 
@@ -81,7 +78,7 @@
       </div>
 
       <!-- 商品空状态 -->
-      <el-empty v-else-if="paginatedProducts.length === 0" description="暂无相关商品，换个分类试试吧~" class="products-empty">
+      <el-empty v-else-if="paginatedProducts.length === 0" description="暂无相关宠物用品，换个分类试试吧~" class="products-empty">
         <el-button type="primary" @click="resetFilter">重置筛选</el-button>
       </el-empty>
 
@@ -97,9 +94,6 @@
             <div class="stock-tag" :class="{ low: product.stockQuantity <= 10, out: product.stockQuantity <= 0 }"
               v-if="product.stockQuantity <= 10">
               {{ product.stockQuantity <= 0 ? '已售罄' : '库存紧张' }} </div>
-                <!-- 加入购物车按钮 -->
-                <el-button icon="ShoppingCart" circle size="small" class="add-to-cart" @click.stop="addToCart(product)"
-                  :disabled="product.stockQuantity <= 0 || !isLogin" />
             </div>
 
             <!-- 商品信息 -->
@@ -130,34 +124,26 @@
     </section>
   </Layout>
 </template>
-<!-- eslint-disable no-unused-vars -->
-<!--  eslint-disable no-undef  -->
+
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { ShoppingCart, Search } from '@element-plus/icons-vue';
-import { isLoggedIn } from '@/utils/auth';
-import Layout from './Layout.vue';
+import { ElMessage } from 'element-plus';
+import Layout from './AppLayout.vue';
 
-// 路由实例
 const router = useRouter();
 
-// 状态管理
-const isLogin = ref(isLoggedIn());
+const PET_SUPPLIES_CODE = 'CHONGWUYONGPIN';
+
 const loading = ref(false);
-const cartCount = ref(3);
 
-// 分页相关
 const currentPage = ref(1);
-const pageSize = ref(16); // 每页显示16个商品
+const pageSize = ref(16);
 
-// 筛选条件
 const selectedCate = ref('all');
 const sortType = ref('default');
 const searchKeyword = ref('');
 
-// 分类树相关
 const categoryTree = ref([]);
 const categoryPath = ref([]);
 const cascaderProps = {
@@ -169,27 +155,21 @@ const cascaderProps = {
     expandTrigger: 'click'
 };
 
-// 数据存储
 const productCategories = ref([]);
-const products = ref([]); // 存储所有商品数据
+const products = ref([]);
 const defaultImage = 'https://picsum.photos/seed/default/300/300';
 
-// 计算属性：总商品数量
 const totalProducts = computed(() => {
   return filteredProducts.value.length;
 });
 
-// 计算属性：当前页的商品（分页后的商品）
 const paginatedProducts = computed(() => {
   const startIndex = (currentPage.value - 1) * pageSize.value;
   const endIndex = startIndex + pageSize.value;
   return filteredProducts.value.slice(startIndex, endIndex);
 });
 
-// 跳转到商品详情页
 const goToProductDetail = (product) => {
-  console.log('跳转到商品详情，传递数据:', product);
-
   router.push({
     name: 'ProductDetail',
     params: { id: product.id },
@@ -204,20 +184,17 @@ const goToProductDetail = (product) => {
   });
 };
 
-// 获取当前分类名称
 const getCurrentCategoryName = () => {
   if (selectedCate.value === 'all') return '全部';
   const category = productCategories.value.find(cate => cate.code === selectedCate.value);
   return category ? category.name : '';
 };
 
-// 根据分类代码获取分类名称
 const getCategoryName = (categoryCode) => {
   const category = productCategories.value.find(cate => cate.code === categoryCode);
   return category ? category.name : categoryCode;
 };
 
-// 计算属性：格式化价格
 const formatPrice = computed(() => {
   return (price) => {
     if (typeof price === 'string') {
@@ -227,16 +204,13 @@ const formatPrice = computed(() => {
   };
 });
 
-// 计算属性：筛选并排序后的商品（所有商品，不分页）
 const filteredProducts = computed(() => {
   let result = [...products.value];
 
-  // 分类筛选
   if (selectedCate.value !== 'all') {
     result = result.filter(product => product.category === selectedCate.value);
   }
 
-  // 关键词搜索
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.toLowerCase().trim();
     result = result.filter(product =>
@@ -246,7 +220,6 @@ const filteredProducts = computed(() => {
     );
   }
 
-  // 价格排序
   if (sortType.value === 'price_asc') {
     result.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
   } else if (sortType.value === 'price_desc') {
@@ -256,24 +229,21 @@ const filteredProducts = computed(() => {
   return result;
 });
 
-// 筛选条件变化处理
 const onFilterChange = () => {
-  currentPage.value = 1; // 重置到第一页
+  currentPage.value = 1;
 };
 
 const onSearch = () => {
-  currentPage.value = 1; // 重置到第一页
+  currentPage.value = 1;
 };
 
 const onSearchClear = () => {
   searchKeyword.value = '';
-  currentPage.value = 1; // 重置到第一页
+  currentPage.value = 1;
 };
 
-// 处理分类选择变化
 const handleCategoryChange = (value) => {
   if (value && value.length > 0) {
-    // 只使用最后一级分类的代码
     selectedCate.value = value[value.length - 1];
   } else {
     selectedCate.value = 'all';
@@ -281,12 +251,10 @@ const handleCategoryChange = (value) => {
   onFilterChange();
 };
 
-// 构建分类树
 const buildCategoryTree = (categories) => {
   const map = {};
   const tree = [];
 
-  // 首先创建所有分类的映射
   categories.forEach(category => {
     map[category.code] = {
       ...category,
@@ -294,14 +262,10 @@ const buildCategoryTree = (categories) => {
     };
   });
 
-  // 然后构建树结构
   categories.forEach(category => {
     if (!category.parentId) {
-      // 根分类
       tree.push(map[category.code]);
     } else {
-      // 子分类
-      // 找到父分类并添加到其children中
       for (const key in map) {
         if (map[key].id === category.parentId) {
           map[key].children.push(map[category.code]);
@@ -314,7 +278,6 @@ const buildCategoryTree = (categories) => {
   return tree;
 };
 
-// 重置筛选条件
 const resetFilter = () => {
   selectedCate.value = 'all';
   categoryPath.value = [];
@@ -325,55 +288,20 @@ const resetFilter = () => {
   ElMessage.success('筛选条件已重置');
 };
 
-// 分页大小变化
 const handleSizeChange = (val) => {
   pageSize.value = val;
-  currentPage.value = 1; // 重置到第一页
-  console.log(`每页显示数量改为: ${val}`);
+  currentPage.value = 1;
 };
 
-// 页码变化
 const handleCurrentChange = (val) => {
   currentPage.value = val;
-  console.log(`当前页码: ${val}`);
-  // 滚动到页面顶部
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 加入购物车
-const addToCart = (product) => {
-  if (!isLogin.value) {
-    ElMessageBox.confirm(
-      '加入购物车需要先登录账号，是否立即前往登录？',
-      '需要登录',
-      {
-        confirmButtonText: '登录',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    ).then(() => {
-      router.push('/login');
-    }).catch(() => {
-      // 取消登录
-    });
-    return;
-  }
-
-  if (product.stockQuantity <= 0) {
-    ElMessage.warning('该商品已售罄，无法加入购物车');
-    return;
-  }
-
-  cartCount.value++;
-  ElMessage.success(`${product.name} 已成功加入购物车`);
-};
-
-// 图片加载错误处理
 const handleImageError = (event) => {
   event.target.src = defaultImage;
 };
 
-// 获取商品分类数据
 const loadCategories = async () => {
   try {
     const response = await fetch('http://localhost:8083/catcatecutomer/product-categories/list');
@@ -381,12 +309,36 @@ const loadCategories = async () => {
     if (response.ok) {
       const result = await response.json();
       if (result.code === 200 && Array.isArray(result.data)) {
-        productCategories.value = result.data.filter(cate => cate.isActive === 1);
-        // 构建分类树
-        categoryTree.value = buildCategoryTree(productCategories.value);
+        const petSuppliesCategory = result.data.find(cat => cat.code === PET_SUPPLIES_CODE);
+        
+        if (petSuppliesCategory) {
+          // 获取宠物用品分类及其所有层级的子分类
+          const getChildCategories = (parentId) => {
+            const children = result.data.filter(cat => cat.parentId === parentId && cat.isActive === 1);
+            const allChildren = [...children];
+            children.forEach(child => {
+              const grandChildren = getChildCategories(child.id);
+              allChildren.push(...grandChildren);
+            });
+            return allChildren;
+          };
+          
+          // 获取宠物用品主分类
+          const mainCategory = result.data.filter(cat => cat.id === petSuppliesCategory.id && cat.isActive === 1);
+          // 获取所有层级的子分类
+          const allSubCategories = getChildCategories(petSuppliesCategory.id);
+          
+          // 合并主分类和所有子分类
+          const petCategories = [...mainCategory, ...allSubCategories];
+          
+          productCategories.value = petCategories;
+          categoryTree.value = buildCategoryTree(petCategories);
+        } else {
+          productCategories.value = getDefaultCategories();
+          categoryTree.value = buildCategoryTree(productCategories.value);
+        }
       } else {
         productCategories.value = getDefaultCategories();
-        // 构建分类树
         categoryTree.value = buildCategoryTree(productCategories.value);
       }
     } else {
@@ -395,57 +347,51 @@ const loadCategories = async () => {
   } catch (error) {
     console.error('获取商品分类失败:', error);
     productCategories.value = getDefaultCategories();
-    // 构建分类树
     categoryTree.value = buildCategoryTree(productCategories.value);
   }
 };
 
-// 获取默认分类数据
 const getDefaultCategories = () => {
   return [
-    { id: 1, name: '猫咪食品', code: 'FOOD', sortOrder: 1, isActive: 1 },
-    { id: 2, name: '猫咪玩具', code: 'TOY', sortOrder: 2, isActive: 1 },
-    { id: 3, name: '日用周边', code: 'SUPPLIES', sortOrder: 3, isActive: 1 },
-    { id: 4, name: '其他周边', code: 'OTHER', sortOrder: 4, isActive: 1 }
+    { id: 1, name: '猫咪食品', code: 'FOOD', parentId: null, sortOrder: 1, isActive: 1 },
+    { id: 2, name: '猫咪用品', code: 'SUPPLIES', parentId: null, sortOrder: 2, isActive: 1 },
+    { id: 3, name: '猫咪零食', code: 'MAOTIAO', parentId: null, sortOrder: 3, isActive: 1 },
+    { id: 4, name: '健康护理', code: 'HEALTH', parentId: null, sortOrder: 4, isActive: 1 }
   ];
 };
 
-// 获取商品数据
 const loadProducts = async () => {
   try {
     loading.value = true;
-    console.log('开始加载商品数据...');
-
-    const params = {
-      pageNum: 1, // 获取所有数据，不在后端分页
-      pageSize: 9999, // 获取足够多的数据
-      category: null,
-      keyword: null,
-      sortBy: null
-    };
 
     const response = await fetch('http://localhost:8083/catcatecutomer/products/list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify({
+        pageNum: 1,
+        pageSize: 9999,
+        status: 'ON_SALE'
+      })
     });
 
     if (response.ok) {
       const result = await response.json();
-      console.log('商品数据响应:', result);
 
       if (result.code === 200 && result.data) {
         const data = result.data;
         if (data.records) {
-          products.value = data.records.map(product => ({
+          // 获取所有宠物用品相关分类的代码（包括所有层级的子分类）
+          const petCategoryCodes = productCategories.value.map(cat => cat.code);
+          const petProducts = data.records.filter(product => petCategoryCodes.includes(product.category));
+          
+          products.value = petProducts.map(product => ({
             ...product,
             price: parseFloat(product.price),
             stockQuantity: parseInt(product.stockQuantity) || 0,
             salesCount: parseInt(product.salesCount) || 0
           }));
-          console.log(`成功加载 ${products.value.length} 个商品`);
         } else {
           products.value = [];
         }
@@ -464,40 +410,77 @@ const loadProducts = async () => {
   }
 };
 
-// 获取模拟商品数据（备用）
 const getMockProducts = () => {
   return [
     {
       id: 1,
-      name: '猫咪主题马克杯',
-      category: 'SUPPLIES',
-      description: '可爱猫咪图案，陶瓷材质，容量350ml，耐高温易清洗',
-      price: 39.9,
-      stockQuantity: 25,
-      imageUrl: 'https://picsum.photos/seed/product1/300/300',
-      brand: '喵趣生活',
-      isAvailable: 1,
-      salesCount: 128,
-      createTime: '2024-01-15T10:30:00'
+      name: '进口无谷猫粮',
+      category: 'FOOD',
+      description: '天然无谷配方，含鸡肉三文鱼，适合全年龄段猫咪',
+      price: 129.00,
+      stockQuantity: 50,
+      imageUrl: 'https://picsum.photos/seed/catfood1/300/300',
+      brand: '皇家宠物',
+      salesCount: 328
     },
     {
       id: 2,
-      name: '进口无谷猫粮试用装',
-      category: 'FOOD',
-      description: '天然无谷配方，含鸡肉三文鱼，适合全年龄段猫咪，500g装',
-      price: 29.9,
-      stockQuantity: 8,
-      imageUrl: 'https://picsum.photos/seed/product2/300/300',
-      brand: '皇家宠物',
-      isAvailable: 1,
-      salesCount: 205,
-      createTime: '2024-01-10T14:20:00'
+      name: '猫咪豪华猫窝',
+      category: 'SUPPLIES',
+      description: '柔软舒适，四季通用，保暖透气',
+      price: 89.00,
+      stockQuantity: 30,
+      imageUrl: 'https://picsum.photos/seed/catbed1/300/300',
+      brand: '宠物之家',
+      salesCount: 89
+    },
+    {
+      id: 3,
+      name: '猫咪零食肉条',
+      category: 'MAOTIAO',
+      description: '美味猫条，营养丰富，猫咪最爱',
+      price: 29.90,
+      stockQuantity: 100,
+      imageUrl: 'https://picsum.photos/seed/cattreat1/300/300',
+      brand: '喵趣生活',
+      salesCount: 156
+    },
+    {
+      id: 4,
+      name: '猫咪营养膏',
+      category: 'HEALTH',
+      description: '补充营养，增强体质，促进健康',
+      price: 45.00,
+      stockQuantity: 60,
+      imageUrl: 'https://picsum.photos/seed/cathealth1/300/300',
+      brand: '美毛专家',
+      salesCount: 72
+    },
+    {
+      id: 5,
+      name: '猫咪美容梳子',
+      category: 'SUPPLIES',
+      description: '专业脱毛梳，去除浮毛，促进血液循环',
+      price: 35.00,
+      stockQuantity: 80,
+      imageUrl: 'https://picsum.photos/seed/catgroom1/300/300',
+      brand: '宠物用品',
+      salesCount: 234
+    },
+    {
+      id: 6,
+      name: '猫咪抓板',
+      category: 'SUPPLIES',
+      description: '瓦楞纸材质，耐磨耐用，保护家具',
+      price: 25.00,
+      stockQuantity: 80,
+      imageUrl: 'https://picsum.photos/seed/catscratch1/300/300',
+      brand: '宠物用品',
+      salesCount: 234
     }
-    // 可以添加更多模拟数据...
   ];
 };
 
-// 统一数据获取函数
 const loadData = async () => {
   await Promise.all([
     loadCategories(),
@@ -505,19 +488,16 @@ const loadData = async () => {
   ]);
 };
 
-// 页面加载时获取数据
 onMounted(() => {
   loadData();
 });
 
-// 监听筛选条件变化
 watch([selectedCate, sortType, searchKeyword], () => {
-  currentPage.value = 1; // 筛选条件变化时重置到第一页
+  currentPage.value = 1;
 }, { deep: true });
 </script>
 
 <style scoped>
-/* 页面头部 */
 .page-header {
   margin-bottom: 30px;
 }
@@ -540,7 +520,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   margin: 0;
 }
 
-/* 筛选区域样式 */
 .filter-section {
   background-color: #fff;
   border-radius: 15px;
@@ -579,7 +558,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   width: 250px;
 }
 
-/* 结果提示 */
 .result-tip {
   font-size: 14px;
   color: #795548;
@@ -591,7 +569,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   font-weight: 600;
 }
 
-/* 加载状态 */
 .loading-container {
   padding: 20px 0;
 }
@@ -602,24 +579,20 @@ watch([selectedCate, sortType, searchKeyword], () => {
   background-color: white;
 }
 
-/* 商品空状态 */
 .products-empty {
   padding: 60px 0;
 }
 
-/* 通用区块样式 */
 .section {
   margin-bottom: 60px;
 }
 
-/* 商品网格 */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 25px;
 }
 
-/* 商品卡片 */
 .product-card {
   border-radius: 15px;
   overflow: hidden;
@@ -634,7 +607,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   box-shadow: 0 10px 20px rgba(255, 167, 71, 0.15);
 }
 
-/* 商品图片容器 */
 .product-img-container {
   position: relative;
   height: 200px;
@@ -646,7 +618,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   object-fit: cover;
 }
 
-/* 库存标签 */
 .stock-tag {
   position: absolute;
   top: 10px;
@@ -669,29 +640,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   color: #e53935;
 }
 
-/* 加入购物车按钮 */
-.add-to-cart {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
-  background-color: white;
-  color: #e65100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.add-to-cart:hover {
-  background-color: #e65100;
-  color: white;
-}
-
-.add-to-cart:disabled {
-  background-color: #e0e0e0;
-  color: #9e9e9e;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* 商品信息 */
 .product-info {
   padding: 15px;
 }
@@ -736,7 +684,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   color: #795548;
 }
 
-/* 价格区域 */
 .product-price-area {
   display: flex;
   justify-content: space-between;
@@ -760,7 +707,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   color: #e53935;
 }
 
-/* 分页容器样式 */
 .pagination-container {
   margin-top: 40px;
   display: flex;
@@ -823,8 +769,6 @@ watch([selectedCate, sortType, searchKeyword], () => {
   color: white;
 }
 
-
-/* 响应式分页调整 */
 @media (max-width: 768px) {
   .pagination-container {
     margin-top: 30px;

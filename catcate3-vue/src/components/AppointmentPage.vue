@@ -1,5 +1,5 @@
 <template>
-    <div class="reservation-management">
+    <AdminLayout>
         <!-- 预约页面 -->
         <!-- 页面标题和操作区 -->
         <div class="page-header">
@@ -124,7 +124,7 @@
             <el-form ref="reservationFormRef" :model="reservationForm" :rules="formRules" label-width="100px"
                 class="reservation-form">
                 <el-row :gutter="20">
-                    <!-- <el-col :span="12">
+                    <el-col :span="12">
                         <el-form-item label="用户名" prop="username">
                             <el-input v-model="reservationForm.username" placeholder="请输入用户名"></el-input>
                         </el-form-item>
@@ -133,28 +133,32 @@
                         <el-form-item label="手机号" prop="phone">
                             <el-input v-model="reservationForm.phone" placeholder="请输入手机号"></el-input>
                         </el-form-item>
-                    </el-col> -->
-                    <el-col :span="12">
-                        <el-form-item label="选择猫咪" prop="catId">
-                            <el-select v-model="reservationForm.catId" placeholder="请选择猫咪">
-                                <el-option v-for="cat in catOptions" :key="cat.id" :label="cat.name"
-                                    :value="cat.id"></el-option>
-                            </el-select>
-                        </el-form-item>
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="预约日期" prop="reservationDate">
                             <el-date-picker v-model="reservationForm.reservationDate" type="date" placeholder="选择预约日期"
-                                :disabled-date="disablePastDates"></el-date-picker>
+                                :disabled-date="disablePastDates" value-format="YYYY-MM-DD" @change="onDateChange"></el-date-picker>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="时间段" prop="timeSlot">
-                            <el-select v-model="reservationForm.timeSlot" placeholder="选择时间段">
-                                <el-option label="10:00-12:00" value="10:00-12:00"></el-option>
-                                <el-option label="13:00-15:00" value="13:00-15:00"></el-option>
-                                <el-option label="16:00-18:00" value="16:00-18:00"></el-option>
-                                <el-option label="19:00-21:00" value="19:00-21:00"></el-option>
+                        <el-form-item label="开始时间" prop="startTime">
+                            <el-time-picker
+                              v-model="reservationForm.startTime"
+                              placeholder="选择开始时间"
+                              format="HH:mm"
+                              value-format="HH:mm"
+                              style="width: 100%"
+                              @change="onTimeChange"
+                            />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="预约时长" prop="duration">
+                            <el-select v-model="reservationForm.duration" placeholder="请选择时长" style="width: 100%" @change="onDurationChange">
+                                <el-option label="30分钟" :value="30"></el-option>
+                                <el-option label="60分钟" :value="60"></el-option>
+                                <el-option label="90分钟" :value="90"></el-option>
+                                <el-option label="120分钟" :value="120"></el-option>
                             </el-select>
                         </el-form-item>
                     </el-col>
@@ -196,8 +200,65 @@
             </el-form>
             <template #footer>
                 <el-button @click="dialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="handleSaveReservation" v-if="dialogType !== 'view'">
-                    保存
+                <el-button type="primary" @click="handleNextStep" v-if="dialogType !== 'view'">
+                    下一步
+                </el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 桌号选择弹窗 -->
+        <el-dialog v-model="tableSelectDialogVisible" title="选择桌号" width="750px" :close-on-click-modal="false">
+            <el-alert
+                title="预约信息"
+                type="info"
+                :closable="false"
+                show-icon
+                style="margin-bottom: 20px"
+            >
+                <el-descriptions :column="2" border size="small">
+                    <el-descriptions-item label="预约日期">
+                        {{ reservationForm.reservationDate }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="时间段">
+                        {{ reservationForm.startTime }} - {{ calculateEndTime(reservationForm.startTime, reservationForm.duration) }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="预约时长">
+                        {{ reservationForm.duration }}分钟
+                    </el-descriptions-item>
+                    <el-descriptions-item label="预约人">
+                        {{ reservationForm.username }}
+                    </el-descriptions-item>
+                </el-descriptions>
+            </el-alert>
+            
+            <el-divider content-position="left">可选桌号 <el-tag type="success" size="small">{{ availableTables.length }}个</el-tag></el-divider>
+            
+            <div v-if="availableTables.length > 0" class="table-grid">
+                <div 
+                    v-for="table in availableTables" 
+                    :key="table.id"
+                    class="table-item"
+                    :class="{ selected: reservationForm.tableId === table.id }"
+                    @click="selectTable(table)"
+                >
+                    <div class="table-number">{{ table.tableNumber }}</div>
+                    <div class="table-capacity">{{ table.capacity }}人桌</div>
+                    <div class="table-status" v-if="reservationForm.tableId === table.id">已选择</div>
+                </div>
+            </div>
+            <div v-else-if="isLoadingTables" class="loading-text">
+                <el-icon><Loading /></el-icon>
+                正在检测时间冲突并加载桌号中...
+            </div>
+            <div v-else class="empty-text">
+                <el-icon style="font-size: 40px; margin-bottom: 10px; color: #e6a23c;"><Warning /></el-icon>
+                <div>该时间段所有桌号都已被预约，请返回选择其他时间</div>
+            </div>
+            
+            <template #footer>
+                <el-button @click="handleBackToEdit">返回上一步</el-button>
+                <el-button type="primary" @click="handleSaveReservation" :disabled="!reservationForm.tableId">
+                    保存预约
                 </el-button>
             </template>
         </el-dialog>
@@ -212,16 +273,17 @@
                 </el-button>
             </template>
         </el-dialog>
-    </div>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import AdminLayout from './AdminLayout.vue';
 import {
     Plus,
     Search,
-    Eye, Edit, Delete, Check, Close
+    Eye, Edit, Delete, Check, Close, Loading, Warning
 } from '@element-plus/icons-vue';
 
 // 状态管理
@@ -229,6 +291,8 @@ const loading = ref(false);
 const reservationList = ref([]);
 const selectedReservations = ref([]);
 const catOptions = ref([]); // 猫咪选项
+const availableTables = ref([]); // 可用桌号列表
+const isLoadingTables = ref(false); // 桌号加载状态
 const reservationFormRef = ref(null); // 表单引用
 
 // 搜索表单
@@ -254,6 +318,7 @@ const dialogVisible = ref(false);
 const dialogType = ref(''); // add, edit, view
 const dialogTitle = ref('');
 const batchDeleteVisible = ref(false);
+const tableSelectDialogVisible = ref(false); // 桌号选择弹窗
 
 // 表单数据和验证规则
 const reservationForm = reactive({
@@ -261,10 +326,9 @@ const reservationForm = reactive({
     userId: '',
     username: '',
     phone: '',
-    catId: '',
-    catName: '',
     reservationDate: '',
-    timeSlot: '',
+    startTime: '',
+    duration: '',
     visitorCount: 1,
     purpose: '',
     status: 'PENDING',
@@ -272,7 +336,9 @@ const reservationForm = reactive({
     userNotes: '',
     cancelReason: '',
     createTime: '',
-    updateTime: ''
+    updateTime: '',
+    tableId: '',
+    tableNumber: ''
 });
 
 const formRules = reactive({
@@ -284,14 +350,14 @@ const formRules = reactive({
         { required: true, message: '请输入手机号', trigger: 'blur' },
         { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
     ],
-    catId: [
-        { required: true, message: '请选择猫咪', trigger: 'change' }
-    ],
     reservationDate: [
         { required: true, message: '请选择预约日期', trigger: 'change' }
     ],
-    timeSlot: [
-        { required: true, message: '请选择时间段', trigger: 'change' }
+    startTime: [
+        { required: true, message: '请选择开始时间', trigger: 'change' }
+    ],
+    duration: [
+        { required: true, message: '请选择预约时长', trigger: 'change' }
     ],
     visitorCount: [
         { required: true, message: '请输入访客人数', trigger: 'blur' },
@@ -531,6 +597,185 @@ const disablePastDates = (time) => {
     return time.getTime() < Date.now() - 86400000; // 禁用今天之前的日期
 };
 
+// 加载可用桌号
+const loadAvailableTables = async () => {
+    if (!reservationForm.reservationDate || !reservationForm.startTime || !reservationForm.duration) {
+        availableTables.value = [];
+        return;
+    }
+    
+    isLoadingTables.value = true;
+    try {
+        // 计算当前选择的时间区间
+        const [currentStartHours, currentStartMinutes] = reservationForm.startTime.split(':').map(Number);
+        const currentStartTimeMinutes = currentStartHours * 60 + currentStartMinutes;
+        const currentEndTimeMinutes = currentStartTimeMinutes + parseInt(reservationForm.duration);
+        
+        console.log('=== 检测时间冲突 ===');
+        console.log('选择的日期:', reservationForm.reservationDate);
+        console.log('当前时间段:', reservationForm.startTime, '至', calculateEndTime(reservationForm.startTime, reservationForm.duration));
+        console.log('时间区间（分钟）:', currentStartTimeMinutes, '-', currentEndTimeMinutes);
+        
+        // 从预约列表中获取已被预约的座位号
+        const res = await fetch("http://localhost:8081/catcate/reservations/listAppointment", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                pageNum: 1,
+                pageSize: 1000,
+                reservationDate: reservationForm.reservationDate
+            })
+        });
+        
+        let bookedTables = [];
+        if (res.ok) {
+            const response = await res.json();
+            console.log('后端返回数据:', response);
+            
+            // 尝试多种数据格式
+            let reservations = [];
+            if (Array.isArray(response)) {
+                reservations = response;
+            } else if (response && response.list) {
+                reservations = response.list;
+            } else if (response && response.data) {
+                reservations = Array.isArray(response.data) ? response.data : [];
+            } else if (response && response.records) {
+                reservations = Array.isArray(response.records) ? response.records : [];
+            } else if (response && response.result) {
+                reservations = Array.isArray(response.result) ? response.result : [];
+            }
+            
+            console.log('预约数量:', reservations.length);
+            
+            if (reservations && reservations.length > 0) {
+                // 提取已被预约的桌号 - 只在时间段有重叠时才标记为已预约
+                const validReservations = reservations.filter(item => {
+                    const isCancelled = item.status === 'CANCELLED';
+                    const hasTableNumber = !!(item.tableNumber || item.table_number);
+                    const hasTimeSlot = !!(item.timeSlot || item.time_slot);
+                    return !isCancelled && hasTableNumber && hasTimeSlot;
+                });
+                
+                console.log('有效预约数量:', validReservations.length);
+                
+                // 检查每个预约是否与当前时间段有重叠
+                bookedTables = validReservations
+                    .filter(item => {
+                        try {
+                            // 如果是编辑模式，排除当前正在编辑的预约
+                            if (dialogType.value === 'edit' && item.id === reservationForm.id) {
+                                return false;
+                            }
+                            
+                            // 解析预约时间段 (格式为 "HH:mm-HH:mm")，支持驼峰和下划线
+                            const timeSlotValue = item.timeSlot || item.time_slot;
+                            const tableNum = item.tableNumber || item.table_number;
+                            
+                            if (!timeSlotValue) {
+                                return false;
+                            }
+                            
+                            const timeSlotParts = timeSlotValue.split('-');
+                            if (timeSlotParts.length !== 2) {
+                                return false;
+                            }
+                            
+                            const [bookedStart, bookedEnd] = timeSlotParts;
+                            const [bookedStartHours, bookedStartMinutes] = bookedStart.split(':').map(Number);
+                            const [bookedEndHours, bookedEndMinutes] = bookedEnd.split(':').map(Number);
+                            
+                            const bookedStartTimeMinutes = bookedStartHours * 60 + bookedStartMinutes;
+                            const bookedEndTimeMinutes = bookedEndHours * 60 + bookedEndMinutes;
+                            
+                            // 判断时间区间是否有重叠
+                            // 重叠条件：当前开始 < 预约结束 且 当前结束 > 预约开始
+                            const hasOverlap = currentStartTimeMinutes < bookedEndTimeMinutes && 
+                                              currentEndTimeMinutes > bookedStartTimeMinutes;
+                            
+                            if (hasOverlap) {
+                                console.log('发现时间冲突:', tableNum, timeSlotValue);
+                            }
+                            
+                            return hasOverlap;
+                        } catch (e) {
+                            console.error('解析预约时间失败:', e);
+                            return false;
+                        }
+                    })
+                    .map(item => item.tableNumber || item.table_number)
+                    .filter(tableNumber => tableNumber);
+            }
+        }
+        
+        console.log('已预约桌号:', bookedTables);
+        
+        // 直接过滤掉已被预约的桌号，只显示可用的
+        availableTables.value = getDefaultTables().filter(table => {
+            return !bookedTables.includes(table.tableNumber);
+        });
+        
+        console.log('可用桌号:', availableTables.value.map(t => t.tableNumber));
+        
+        // 如果当前选中的桌号不在可用列表中，清空选择
+        if (reservationForm.tableId) {
+            const isTableStillAvailable = availableTables.value.some(table => table.id === reservationForm.tableId);
+            if (!isTableStillAvailable) {
+                reservationForm.tableId = '';
+                reservationForm.tableNumber = '';
+            }
+        }
+        
+    } catch (error) {
+        console.error('加载可用桌号失败:', error);
+        availableTables.value = [];
+        ElMessage.error('加载可用桌号失败，请重试');
+    } finally {
+        isLoadingTables.value = false;
+    }
+};
+
+// 获取默认桌号数据（作为备选）
+const getDefaultTables = () => {
+    return [
+        { id: 1, tableNumber: '1号桌', capacity: 2, status: 'AVAILABLE' },
+        { id: 2, tableNumber: '2号桌', capacity: 2, status: 'AVAILABLE' },
+        { id: 3, tableNumber: '3号桌', capacity: 4, status: 'AVAILABLE' },
+        { id: 4, tableNumber: '4号桌', capacity: 4, status: 'AVAILABLE' },
+        { id: 5, tableNumber: '5号桌', capacity: 6, status: 'AVAILABLE' },
+        { id: 6, tableNumber: '6号桌', capacity: 6, status: 'AVAILABLE' },
+        { id: 7, tableNumber: '7号桌', capacity: 8, status: 'AVAILABLE' },
+        { id: 8, tableNumber: '8号桌', capacity: 8, status: 'AVAILABLE' }
+    ];
+};
+
+// 选择桌号
+const selectTable = (table) => {
+    reservationForm.tableId = table.id;
+    reservationForm.tableNumber = table.tableNumber;
+};
+
+// 日期改变时加载桌号
+const onDateChange = () => {
+    loadAvailableTables();
+};
+
+// 时间改变时加载桌号
+const onTimeChange = () => {
+    reservationForm.tableId = '';
+    reservationForm.tableNumber = '';
+    loadAvailableTables();
+};
+
+// 时长改变时重新加载桌号
+const onDurationChange = () => {
+    reservationForm.tableId = '';
+    reservationForm.tableNumber = '';
+    loadAvailableTables();
+};
+
 // 状态切换
 const handleStatusChange = (row) => {
     const newStatus = row.status === 'PENDING' ? 'CONFIRMED' : 'CANCELLED';
@@ -589,39 +834,70 @@ const handleAddReservation = () => {
         userId: '',
         username: '',
         phone: '',
-        catId: '',
-        catName: '',
         reservationDate: '',
-        timeSlot: '',
+        startTime: '',
+        duration: '',
         visitorCount: 1,
         purpose: '',
         status: 'PENDING',
         adminNotes: '',
         userNotes: '',
-        cancelReason: ''
+        cancelReason: '',
+        tableId: '',
+        tableNumber: ''
     });
+    availableTables.value = [];
     dialogVisible.value = true;
 };
 const handleEditReservation = (row) => {
     dialogType.value = 'edit';
     dialogTitle.value = '修改预约';
+    
+    // 解析时间槽，提取开始时间
+    let extractedStartTime = row.startTime || '';
+    let extractedDuration = row.duration || '';
+    
+    // 如果 start time 为空但有 timeSlot，则解析 timeSlot
+    if (!extractedStartTime && row.timeSlot) {
+        const timeSlotParts = row.timeSlot.split('-');
+        if (timeSlotParts.length === 2) {
+            extractedStartTime = timeSlotParts[0];
+            // 计算持续时间
+            try {
+                const [startH, startM] = timeSlotParts[0].split(':').map(Number);
+                const [endH, endM] = timeSlotParts[1].split(':').map(Number);
+                const startMinutes = startH * 60 + startM;
+                const endMinutes = endH * 60 + endM;
+                extractedDuration = endMinutes - startMinutes;
+            } catch (e) {
+                // 如果解析失败，保持原样
+            }
+        }
+    }
+    
     // 填充表单数据
     Object.assign(reservationForm, {
         id: row.id,
         userId: row.userId,
         username: row.username,
         phone: row.phone,
-        catId: row.catId,
-        catName: row.catName,
         reservationDate: row.reservationDate,
-        timeSlot: row.timeSlot,
+        startTime: extractedStartTime,
+        duration: extractedDuration,
         visitorCount: row.visitorCount,
         purpose: row.purpose,
         status: row.status,
         adminNotes: row.adminNotes,
         userNotes: row.userNotes,
-        cancelReason: row.cancelReason
+        cancelReason: row.cancelReason,
+        tableId: row.tableId || '',
+        tableNumber: row.tableNumber || ''
     });
+    
+    // 加载可用桌号
+    setTimeout(() => {
+        loadAvailableTables();
+    }, 100);
     dialogVisible.value = true;
 };
 
@@ -633,8 +909,18 @@ const handleViewReservation = (row) => {
     dialogVisible.value = true;
 };
 
-// 保存修改预约信息
-const handleSaveReservation = async () => {
+// 计算结束时间
+const calculateEndTime = (startTime, duration) => {
+    if (!startTime || !duration) return '';
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + duration;
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+};
+
+// 下一步 - 进入桌号选择
+const handleNextStep = async () => {
     // 确保表单ref已初始化
     await nextTick();
 
@@ -646,29 +932,124 @@ const handleSaveReservation = async () => {
     // 表单验证
     try {
         await reservationFormRef.value.validate();
+        
+        // 检查必要条件
+        if (!reservationForm.reservationDate || !reservationForm.startTime || !reservationForm.duration) {
+            ElMessage.warning('请先选择预约日期、时间和时长');
+            return;
+        }
+        
+        // 显示加载中提示
+        const loadingMsg = ElMessage({
+            message: '正在检测可用桌号...',
+            type: 'info',
+            duration: 0,
+            iconClass: 'el-icon-loading'
+        });
+        
+        // 加载可用桌号
+        await loadAvailableTables();
+        
+        loadingMsg.close();
+        
+        if (availableTables.value.length === 0) {
+            ElMessage.warning('该时间段所有桌号都已被预约，请选择其他时间');
+            return;
+        }
+        
+        // 关闭第一步弹窗，打开桌号选择弹窗
+        dialogVisible.value = false;
+        tableSelectDialogVisible.value = true;
+        
+    } catch (error) {
+        // 表单验证失败
+        ElMessage.warning('请完善表单信息');
+    }
+};
 
-        loading.value = true;
-        //请求后端
+// 返回上一步
+const handleBackToEdit = () => {
+    tableSelectDialogVisible.value = false;
+    dialogVisible.value = true;
+};
+
+// 保存修改预约信息
+const handleSaveReservation = async () => {
+    // 检查是否选择了桌号
+    if (!reservationForm.tableId) {
+        ElMessage.warning('请选择桌号');
+        return;
+    }
+
+    loading.value = true;
+    
+    try {
+        // 格式化日期时间为 yyyy-MM-dd HH:mm:ss
+        const now = new Date();
+        const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        
+        // 构建请求数据
+        const reservationData = {
+            userId: 1,
+            catId: 1,
+            username: reservationForm.username,
+            phone: reservationForm.phone,
+            reservationDate: reservationForm.reservationDate,
+            timeSlot: `${reservationForm.startTime}-${calculateEndTime(reservationForm.startTime, reservationForm.duration)}`,
+            visitorCount: parseInt(reservationForm.visitorCount),
+            purpose: reservationForm.purpose || '',
+            status: reservationForm.status,
+            adminNotes: reservationForm.adminNotes || '',
+            userNotes: '',
+            createTime: formattedDate,
+            updateTime: formattedDate
+        };
+        
+        // 只在有值时才添加桌号字段
+        if (reservationForm.tableId) {
+            reservationData.tableId = parseInt(reservationForm.tableId);
+        }
+        if (reservationForm.tableNumber) {
+            reservationData.tableNumber = reservationForm.tableNumber;
+        }
+        
+        // 编辑时添加id和userId（如果有值）
+        if (dialogType.value !== 'add') {
+            if (reservationForm.id) {
+                reservationData.id = parseInt(reservationForm.id);
+            }
+            if (reservationForm.userId) {
+                reservationData.userId = parseInt(reservationForm.userId);
+            }
+        }
+        
+        // 请求后端
         const res = await fetch("http://localhost:8081/catcate/reservations/addOrUpdateReservation", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(reservationForm)
+            body: JSON.stringify(reservationData)
         });
-        const response = await res.json();
-        console.log(response, "response===========");
-        if (response == true) {
-            ElMessage.success('预约更新成功');
+        
+        if (res.status === 200) {
+            const response = await res.json();
+            if (response == true) {
+                ElMessage.success(dialogType.value === 'add' ? '预约创建成功' : '预约更新成功');
+            } else {
+                ElMessage.error(dialogType.value === 'add' ? '预约创建失败' : '预约更新失败');
+            }
+            tableSelectDialogVisible.value = false;
+            // 刷新当前页数据
+            fetchReservationList();
         } else {
-            ElMessage.error('预约更新失败');
+            ElMessage.error('请求失败，请检查数据格式');
         }
-        dialogVisible.value = false;
-        // 刷新当前页数据
-        fetchReservationList();
     } catch (error) {
-        // 表单验证失败
-        ElMessage.warning('请完善表单信息');
+        console.error(error);
+        ElMessage.warning('保存预约失败');
+    } finally {
+        loading.value = false;
     }
 };
 
@@ -694,7 +1075,6 @@ const handleDeleteReservation = (row) => {
                 body: JSON.stringify(row.id)
             });
             const response = await res.json();
-            console.log(response, "response===========");
             if (response == true) {
                 ElMessage.success('删除成功');
             } else {
@@ -731,7 +1111,6 @@ const confirmBatchDelete = async () => {
             body: JSON.stringify(selectedReservations.value.map(item => item.id))
         });
         const response = await res.json();
-        console.log(response, "response===========");
         if (response == true) {
             ElMessage.success(`成功删除${selectedReservations.value.length}条预约记录`);
         } else {
@@ -816,6 +1195,84 @@ const confirmBatchDelete = async () => {
 
 :deep(.el-table .row-cancelled) {
     background-color: rgba(248, 248, 255, 0.3);
+}
+
+/* 桌号选择样式 */
+.table-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.table-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 10px;
+    border: 2px solid #e4e7ed;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    min-height: 70px;
+}
+
+.table-item:hover {
+    border-color: #409eff;
+    background-color: #ecf5ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+}
+
+.table-item.selected {
+    border-color: #409eff;
+    background-color: #ecf5ff;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.table-number {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+}
+
+.table-capacity {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+}
+
+.table-status {
+    font-size: 11px;
+    color: #67c23a;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.loading-text, .empty-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #909399;
+    text-align: center;
+}
+
+.loading-text svg {
+    margin-right: 8px;
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* 响应式调整 */

@@ -1,6 +1,7 @@
 package com.zrrd.catcatecutomer.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -35,6 +36,11 @@ public class Reservations implements Serializable {
     private Long catId;
 
     /**
+     * 活动ID
+     */
+    private Long activityId;
+
+    /**
      * 预约日期
      */
     private LocalDate reservationDate;
@@ -43,6 +49,26 @@ public class Reservations implements Serializable {
      * 时间段
      */
     private String timeSlot;
+
+    /**
+     * 预约时间
+     */
+    private LocalDateTime reservationTime;
+
+    /**
+     * 预约时长（分钟）
+     */
+    private Integer duration;
+
+    /**
+     * 桌号ID
+     */
+    private Long tableId;
+
+    /**
+     * 桌号
+     */
+    private String tableNumber;
 
     /**
      * 访客人数
@@ -84,6 +110,28 @@ public class Reservations implements Serializable {
      */
     private LocalDateTime updateTime;
 
+    @TableField("username")
+    private String username;
+
+    @TableField("phone")
+    private String phone;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
     public Long getId() {
         return id;
     }
@@ -108,6 +156,14 @@ public class Reservations implements Serializable {
         this.catId = catId;
     }
 
+    public Long getActivityId() {
+        return activityId;
+    }
+
+    public void setActivityId(Long activityId) {
+        this.activityId = activityId;
+    }
+
     public LocalDate getReservationDate() {
         return reservationDate;
     }
@@ -122,6 +178,38 @@ public class Reservations implements Serializable {
 
     public void setTimeSlot(String timeSlot) {
         this.timeSlot = timeSlot;
+    }
+
+    public LocalDateTime getReservationTime() {
+        return reservationTime;
+    }
+
+    public void setReservationTime(LocalDateTime reservationTime) {
+        this.reservationTime = reservationTime;
+    }
+
+    public Integer getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Integer duration) {
+        this.duration = duration;
+    }
+
+    public Long getTableId() {
+        return tableId;
+    }
+
+    public void setTableId(Long tableId) {
+        this.tableId = tableId;
+    }
+
+    public String getTableNumber() {
+        return tableNumber;
+    }
+
+    public void setTableNumber(String tableNumber) {
+        this.tableNumber = tableNumber;
     }
 
     public Integer getVisitorCount() {
@@ -191,19 +279,26 @@ public class Reservations implements Serializable {
     @Override
     public String toString() {
         return "Reservations{" +
-            "id = " + id +
-            ", userId = " + userId +
-            ", catId = " + catId +
-            ", reservationDate = " + reservationDate +
-            ", timeSlot = " + timeSlot +
-            ", visitorCount = " + visitorCount +
-            ", purpose = " + purpose +
-            ", status = " + status +
-            ", adminNotes = " + adminNotes +
-            ", userNotes = " + userNotes +
-            ", cancelReason = " + cancelReason +
-            ", createTime = " + createTime +
-            ", updateTime = " + updateTime +
-        "}";
+                "id=" + id +
+                ", userId=" + userId +
+                ", catId=" + catId +
+                ", activityId=" + activityId +
+                ", reservationDate=" + reservationDate +
+                ", timeSlot='" + timeSlot + '\'' +
+                ", reservationTime=" + reservationTime +
+                ", duration=" + duration +
+                ", tableId=" + tableId +
+                ", tableNumber='" + tableNumber + '\'' +
+                ", visitorCount=" + visitorCount +
+                ", purpose='" + purpose + '\'' +
+                ", status='" + status + '\'' +
+                ", adminNotes='" + adminNotes + '\'' +
+                ", userNotes='" + userNotes + '\'' +
+                ", cancelReason='" + cancelReason + '\'' +
+                ", createTime=" + createTime +
+                ", updateTime=" + updateTime +
+                ", username='" + username + '\'' +
+                ", phone='" + phone + '\'' +
+                '}';
     }
 }

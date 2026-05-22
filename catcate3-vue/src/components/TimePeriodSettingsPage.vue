@@ -1,6 +1,6 @@
 <!-- 时段设置界面 -->
 <template>
-    <div class="time-slot-management">
+    <AdminLayout>
         <!-- 页面标题和操作区 -->
         <div class="page-header">
             <h1>预约时段设置</h1>
@@ -169,7 +169,7 @@
                 </el-button>
             </template>
         </el-dialog>
-    </div>
+    </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
@@ -177,6 +177,7 @@
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Search, Edit, Delete, Refresh, SortUp } from '@element-plus/icons-vue';
+import AdminLayout from './AdminLayout.vue';
 
 // 状态管理
 const loading = ref(false);

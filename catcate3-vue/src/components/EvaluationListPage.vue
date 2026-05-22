@@ -1,6 +1,6 @@
 <!-- 评价列表页面 -->
 <template>
-  <div class="review-management">
+  <AdminLayout>
     <!-- 页面标题和操作区 -->
     <div class="page-header">
       <h1>评价管理</h1>
@@ -117,8 +117,8 @@
         </el-table-column>
         <el-table-column label="评分" min-width="130" align="center">
           <template #default="scope">
-            <el-rate :value="scope.row.rating" :max="5" disabled allow-half style="color: #ff9f43;"
-              disabled-void-color="#ff9f43" />
+            <el-rate :model-value="scope.row.rating" :max="5" disabled allow-half style="color: #ff9f43;"
+              disabled-void-color="#ccc" />
             <span class="rating-text">{{ scope.row.rating }}分</span>
           </template>
         </el-table-column>
@@ -218,8 +218,8 @@
             </div>
           </div>
           <div class="rating-section">
-            <el-rate :value="currentReview.rating" :max="5" disabled allow-half
-              style="color: #ff9f43; font-size: 20px;"></el-rate>
+            <el-rate :model-value="currentReview.rating" :max="5" disabled allow-half
+              style="color: #ff9f43; font-size: 20px;" disabled-void-color="#ccc"></el-rate>
             <span class="rating-text">{{ currentReview.rating }}分</span>
           </div>
         </div>
@@ -313,12 +313,13 @@
         </el-button>
       </template>
     </el-dialog>
-  </div>
+  </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <script setup>
 import { ref, reactive, onMounted, nextTick, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import AdminLayout from './AdminLayout.vue';
 import {
   Search, Eye, Edit, Delete, Check, Close, Like,
   Star, StarOff, Time, Calendar, User, ShoppingCart,
@@ -455,6 +456,8 @@ const fetchReviewList = async () => {
           ...item,
           // 处理图片数组
           images: item.images ? item.images.split(',').filter(img => img) : [],
+          // 转换评分为数字
+          rating: Number(item.rating) || 0,
           // 格式化时间
           createTime: item.createTime ? new Date(item.createTime) : '',
           updateTime: item.updateTime ? new Date(item.updateTime) : ''
@@ -568,7 +571,9 @@ const handleViewReview = (row) => {
   Object.assign(currentReview, {
     ...row,
     // 确保图片是数组格式
-    images: Array.isArray(row.images) ? row.images : row.images ? row.images.split(',').filter(img => img) : []
+    images: Array.isArray(row.images) ? row.images : row.images ? row.images.split(',').filter(img => img) : [],
+    // 转换评分为数字
+    rating: Number(row.rating) || 0
   });
   viewDialogVisible.value = true;
 };
@@ -577,7 +582,9 @@ const handleViewReview = (row) => {
 const handleReplyReview = (row) => {
   Object.assign(currentReview, {
     ...row,
-    images: Array.isArray(row.images) ? row.images : row.images ? row.images.split(',').filter(img => img) : []
+    images: Array.isArray(row.images) ? row.images : row.images ? row.images.split(',').filter(img => img) : [],
+    // 转换评分为数字
+    rating: Number(row.rating) || 0
   });
   // 填充已有回复
   replyForm.adminReply = row.adminReply || '';

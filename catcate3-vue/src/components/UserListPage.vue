@@ -1,5 +1,5 @@
 <template>
-    <div class="user-management">
+    <AdminLayout>
         <!-- 页面标题和操作区 -->
         <div class="page-header">
             <h1>用户管理</h1>
@@ -193,12 +193,13 @@
                 </el-button>
             </template>
         </el-dialog>
-    </div>
+    </AdminLayout>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, nextTick, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import AdminLayout from './AdminLayout.vue';
 // import { 
 //   Plus, Search, Eye, Edit, Delete, Check, Close,
 //   Phone, Refresh, User
@@ -236,7 +237,7 @@ const batchConfirmContent = ref('');
 
 // 表单数据和验证规则
 const userForm = reactive({
-    id: '',
+    id: null,
     username: '',
     password: '',
     confirmPassword: '',
@@ -563,7 +564,7 @@ const handleAddUser = () => {
     dialogTitle.value = '新增用户';
     // 重置表单
     Object.assign(userForm, {
-        id: '',
+        id: null,
         username: '',
         password: '',
         confirmPassword: '',
@@ -619,13 +620,38 @@ const handleSaveUser = async () => {
         // 表单验证
         await userFormRef.value.validate();
         loading.value = true;
-        //请求后端数据
+        
+        // 格式化为正确的日期格式
+        const now = new Date();
+        const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        
+        // 构建请求数据，只包含需要的字段
+        const userData = {
+            username: userForm.username,
+            password: userForm.password,
+            email: userForm.email || null,
+            phone: userForm.phone || null,
+            role: userForm.role,
+            nickname: userForm.nickname || null,
+            avatar: userForm.avatar || null,
+            status: userForm.status,
+            updateTime: formattedDate
+        };
+        
+        // 新增时添加创建时间，编辑时携带id
+        if (dialogType.value === 'add') {
+            userData.createTime = formattedDate;
+        } else {
+            userData.id = userForm.id;
+        }
+        
+        // 请求后端数据
         const res = await fetch("http://localhost:8081/catcate/users/addOrUpdate", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(userForm)
+            body: JSON.stringify(userData)
         })
         // 处理响应
         if (res.status === 200) {

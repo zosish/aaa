@@ -28,9 +28,13 @@
             <el-icon><Calendar /></el-icon>
             <span>预约撸猫</span>
           </el-menu-item>
+          <el-menu-item index="CateringMenuPage">
+            <el-icon><ShoppingBag /></el-icon>
+            <span>店内餐饮</span>
+          </el-menu-item>
           <el-menu-item index="ProductPage">
             <el-icon><ShoppingBag /></el-icon>
-            <span>周边商品</span>
+            <span>宠物用品</span>
           </el-menu-item>
           <el-menu-item index="activities">
             <el-icon><Promotion /></el-icon>
@@ -43,7 +47,7 @@
             </template>
             <el-menu-item index="profile">个人信息</el-menu-item>
             <el-menu-item index="my-orders">我的订单</el-menu-item>
-            <el-menu-item index="my-reservations">我的预约</el-menu-item>
+            <!-- <el-menu-item index="my-reservations">我的预约</el-menu-item> -->
             <el-menu-item index="reviews">我的评价</el-menu-item>
             <el-menu-item index="cart">购物车</el-menu-item>
             <el-menu-item @click="handleLogout">退出登录</el-menu-item>
@@ -66,7 +70,7 @@
           <div class="social-icons">
             <el-button icon="Wechat" circle size="small" class="social-btn">微信</el-button>
             <el-button icon="Weibo" circle size="small" class="social-btn">微博</el-button>
-            <el-button icon="Instagram" circle size="small" class="social-btn"></el-button>
+            <el-button icon="Instagram" circle size="small" class="social-btn">Instagram</el-button>
           </div>
         </div>
         <div class="footer-column">
@@ -94,7 +98,7 @@
     </el-footer>
   </div>
 </template>
-
+<!-- eslint-disable no-unused-vars -->
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';

@@ -89,12 +89,41 @@ CREATE TABLE shopping_cart (
     KEY idx_user_id (user_id) COMMENT '用户ID索引',
     KEY idx_product_id (product_id) COMMENT '商品ID索引'
 ) COMMENT='购物车表';
+-- CREATE TABLE tables (
+--     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '桌位ID',
+--     table_no VARCHAR(20) NOT NULL UNIQUE COMMENT '桌号（如：T01、A08）',
+--     capacity INT NOT NULL DEFAULT 4 COMMENT '容纳人数',
+--     location VARCHAR(100) COMMENT '位置描述（大厅/窗边等）',
+--     status TINYINT DEFAULT 1 COMMENT '状态：1-正常可用，0-禁用/维修',
+--     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+--     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+-- ) COMMENT '门店桌位表';
+-- CREATE TABLE reservations (
+--     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '预约ID',
+--     user_id BIGINT NOT NULL COMMENT '用户ID',
+--     cat_id BIGINT NOT NULL COMMENT '猫咪ID',
+--     reservation_date DATE NOT NULL COMMENT '预约日期',
+--     time_slot VARCHAR(50) NOT NULL COMMENT '时间段',
+--     visitor_count INT DEFAULT 1 COMMENT '访客人数',
+--     purpose VARCHAR(200) COMMENT '预约目的',
+--     status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态：PENDING-待确认, CONFIRMED-已确认, CANCELLED-已取消, COMPLETED-已完成',
+--     admin_notes TEXT COMMENT '管理员备注',
+--     user_notes TEXT COMMENT '用户备注',
+--     cancel_reason VARCHAR(200) COMMENT '取消原因',
+--     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+--     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+-- ) COMMENT '预约记录表';
 CREATE TABLE reservations (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '预约ID',
     user_id BIGINT NOT NULL COMMENT '用户ID',
-    cat_id BIGINT NOT NULL COMMENT '猫咪ID',
+    cat_id BIGINT COMMENT '猫咪ID',
+    activity_id BIGINT COMMENT '活动ID',
     reservation_date DATE NOT NULL COMMENT '预约日期',
-    time_slot VARCHAR(50) NOT NULL COMMENT '时间段',
+    time_slot VARCHAR(50) COMMENT '时间段',
+    reservation_time DATETIME COMMENT '预约时间',
+    duration INT DEFAULT 60 COMMENT '预约时长（分钟）',
+    table_id BIGINT COMMENT '桌号ID',
+    table_number VARCHAR(20) COMMENT '桌号',
     visitor_count INT DEFAULT 1 COMMENT '访客人数',
     purpose VARCHAR(200) COMMENT '预约目的',
     status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态：PENDING-待确认, CONFIRMED-已确认, CANCELLED-已取消, COMPLETED-已完成',
@@ -104,6 +133,15 @@ CREATE TABLE reservations (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) COMMENT '预约记录表';
+CREATE TABLE tables (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '桌号ID',
+    table_number VARCHAR(20) NOT NULL UNIQUE COMMENT '桌号（如：1, 2, 3...）',
+    capacity INT NOT NULL DEFAULT 2 COMMENT '座位数',
+    status VARCHAR(20) DEFAULT 'AVAILABLE' COMMENT '状态：AVAILABLE-可用, OCCUPIED-占用, RESERVED-已预约, MAINTENANCE-维护中',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) COMMENT '桌号信息表';
+
 CREATE TABLE reservation_time_slots (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '时段ID',
     time_slot VARCHAR(50) NOT NULL COMMENT '时间段，例如：09:00-10:00',
@@ -170,6 +208,23 @@ CREATE TABLE order_items (
     subtotal DECIMAL(10,2) NOT NULL COMMENT '小计金额',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
 ) COMMENT '订单商品明细表';
+CREATE TABLE refunds (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '退款ID',
+    order_id BIGINT NOT NULL COMMENT '订单ID',
+    order_number VARCHAR(50) NOT NULL COMMENT '订单编号',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    refund_amount DECIMAL(10,2) NOT NULL COMMENT '退款金额',
+    refund_reason VARCHAR(200) NOT NULL COMMENT '退款原因',
+    refund_status VARCHAR(20) DEFAULT 'PROCESSING' COMMENT '退款状态：PROCESSING-处理中, SUCCESS-退款成功, FAILED-退款失败',
+    transaction_id VARCHAR(100) COMMENT '原支付交易ID',
+    refund_transaction_id VARCHAR(100) COMMENT '退款交易ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    KEY idx_order_id (order_id),
+    KEY idx_user_id (user_id),
+    KEY idx_refund_status (refund_status)
+) COMMENT '退款记录表';
 CREATE TABLE activities (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '活动ID',
     title VARCHAR(100) NOT NULL COMMENT '活动标题',
@@ -230,3 +285,18 @@ CREATE TABLE favorites (
     INDEX idx_target (target_type, target_id)
 ) COMMENT '收藏表';
 ALTER TABLE users MODIFY COLUMN avatar TEXT;
+ALTER TABLE orders ADD COLUMN refund_status VARCHAR(20) DEFAULT 'NONE' COMMENT '退款状态：NONE-无退款, PROCESSING-退款处理中, SUCCESS-退款成功, FAILED-退款失败';
+ALTER TABLE orders ADD COLUMN refund_amount DECIMAL(10,2) DEFAULT 0.00 COMMENT '退款金额';
+ALTER TABLE orders ADD COLUMN refund_time DATETIME COMMENT '退款时间';
+ALTER TABLE orders ADD COLUMN refund_reason VARCHAR(200) COMMENT '退款原因';
+ALTER TABLE orders ADD COLUMN refund_transaction_id VARCHAR(100) COMMENT '退款交易ID';
+
+
+
+
+
+
+
+
+
+

@@ -55,4 +55,21 @@ public interface IReservationsService extends IService<Reservations> {
      * @return 已预订的时间段列表
      */
     List<String> getBookedTimeSlots(Long catId, LocalDate reservationDate);
+
+    /**
+     * 获取已预订的桌号
+     * @param reservationDate 预约日期
+     * @param timeSlot 时间段
+     * @return 已预订的桌号列表
+     */
+    List<Long> getBookedTableIds(LocalDate reservationDate, String timeSlot);
+
+    /**
+     * 检查桌号是否在指定时间被预约
+     * @param tableId 桌号ID
+     * @param reservationDate 预约日期
+     * @param timeSlot 时间段
+     * @return 是否被预约
+     */
+    boolean isTableReserved(Long tableId, LocalDate reservationDate, String timeSlot);
 }

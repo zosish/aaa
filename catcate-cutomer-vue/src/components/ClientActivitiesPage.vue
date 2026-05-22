@@ -185,7 +185,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Calendar, Clock, Search } from '@element-plus/icons-vue'
 import { api } from '@/utils/api'
-import Layout from './Layout.vue'
+import Layout from './AppLayout.vue'
 
 // 数据响应式变量
 const loading = ref(false)

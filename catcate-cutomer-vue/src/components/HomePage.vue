@@ -91,6 +91,31 @@
       </div>
     </section>
 
+    <!-- 咖啡区域 -->
+    <section class="section coffee-section">
+      <div class="section-header">
+        <h2>店内餐饮</h2>
+        <el-button type="text" @click="$router.push('/coffee')">查看菜单 <el-icon>
+            <ArrowRight />
+          </el-icon></el-button>
+      </div>
+
+      <div class="coffee-grid">
+        <el-card v-for="coffee in featuredCoffees" :key="coffee.id" class="coffee-card" shadow="hover"
+          @click="$router.push('/coffee')">
+          <div class="coffee-img-container">
+            <img :src="coffee.imageUrl" :alt="coffee.name" class="coffee-img">
+            <div class="coffee-tag" v-if="coffee.isHot">热卖</div>
+          </div>
+          <div class="coffee-info">
+            <h3>{{ coffee.name }}</h3>
+            <p class="coffee-desc">{{ coffee.description }}</p>
+            <div class="coffee-price">¥{{ coffee.price.toFixed(2) }}</div>
+          </div>
+        </el-card>
+      </div>
+    </section>
+
     <!-- 商品区域 -->
     <section class="section products-section">
       <div class="section-header">
@@ -178,7 +203,7 @@ import {
   ArrowRight, Check
 } from '@element-plus/icons-vue';
 import { api } from '../utils/api';
-import Layout from './Layout.vue';
+import Layout from './AppLayout.vue';
 
 // 路由
 const router = useRouter();
@@ -188,6 +213,46 @@ const defaultAvatar = 'https://picsum.photos/seed/user/100/100';
 
 // 特色猫咪数据（关联cats表）- 修改为从API获取热门猫咪
 const featuredCats = ref([]);
+
+// 精选咖啡数据（从API获取店内餐饮分类）
+const featuredCoffees = ref([]);
+
+// 加载咖啡数据（店内餐饮分类）
+const loadCoffees = async () => {
+  try {
+    // 获取所有上架商品
+    const response = await fetch('http://localhost:8083/catcatecutomer/products/list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        pageNum: 1,
+        pageSize: 6,
+        status: 'ON_SALE'
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.code === 200 && result.data && result.data.records) {
+        // 筛选出店内餐饮分类下的商品（饮品、小吃等）
+        const diningCategories = ['YINPIN', 'XIAOCHI', 'DIANNEICANYIN'];
+        const filteredRecords = result.data.records.filter(product => 
+          diningCategories.includes(product.category)
+        );
+        
+        featuredCoffees.value = filteredRecords.slice(0, 3).map(product => ({
+          ...product,
+          price: parseFloat(product.price),
+          isHot: (parseInt(product.salesCount) || 0) > 50
+        }));
+      }
+    }
+  } catch (error) {
+    console.error('获取咖啡数据失败:', error);
+  }
+};
 
 // 精选商品数据（关联products表）- 修改为从API获取热销商品
 const featuredProducts = ref([]);
@@ -203,6 +268,8 @@ const customerReviews = ref([]);
 onMounted(async () => {
   // 获取热门猫咪数据
   loadPopularCats();
+  // 获取咖啡数据
+  loadCoffees();
   // 获取热销商品数据
   loadBestSellingProducts();
   // 获取最新活动数据
@@ -559,6 +626,76 @@ const formatDateRange = (start, end) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* 咖啡区域 */
+.coffee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.coffee-card {
+  border-radius: 15px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  background-color: white;
+}
+
+.coffee-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(139, 90, 43, 0.15);
+}
+
+.coffee-img-container {
+  position: relative;
+  height: 200px;
+}
+
+.coffee-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coffee-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #d32f2f;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.coffee-info {
+  padding: 15px;
+}
+
+.coffee-info h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  color: #5d4037;
+}
+
+.coffee-desc {
+  font-size: 13px;
+  color: #795548;
+  margin: 0 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.coffee-price {
+  font-size: 22px;
+  font-weight: bold;
+  color: #5d4037;
 }
 
 /* 商品区域 */

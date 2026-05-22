@@ -1,5 +1,5 @@
 <template>
-    <div class="cat-health-management">
+    <AdminLayout>
         <!-- 页面标题和操作区 -->
         <div class="page-header">
             <h2 class="page-title">猫咪健康记录管理</h2>
@@ -293,12 +293,13 @@
                 </div>
             </div>
         </el-dialog>
-    </div>
+    </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 
 <script setup>
 import { ref, reactive, onMounted, nextTick, computed } from 'vue';
+import AdminLayout from './AdminLayout.vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {

@@ -334,8 +334,8 @@ import {
   User, Location, Lock, Plus, Iphone, Message 
 } from '@element-plus/icons-vue';
 import { api } from '../utils/api';
-import { getUserInfo, getUserId } from '../utils/auth';
-import Layout from './Layout.vue';
+import { getUserInfo, getUserId, isLoginValid, clearAuth } from '../utils/auth';
+import Layout from './AppLayout.vue';
 
 const router = useRouter();
 
@@ -463,11 +463,25 @@ const regionOptions = [
 
 // 生命周期
 onMounted(() => {
-  // 加载用户信息
+  // 检查登录状态
+  checkLoginStatus();
+});
+
+// 检查登录状态
+const checkLoginStatus = () => {
+  if (!isLoginValid()) {
+    // 登录过期或未登录，跳转到登录页面
+    ElMessage.warning('登录已过期，请重新登录');
+    clearAuth();
+    router.push('/login');
+    return;
+  }
+  
+  // 登录有效，加载用户信息
   loadUserProfile();
   // 加载用户地址
   loadAddresses();
-});
+};
 
 // 菜单切换
 const handleMenuSelect = (key) => {

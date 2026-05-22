@@ -1,250 +1,143 @@
 <template>
-  <div class="admin-dashboard">
-    <!-- 顶部导航 -->
-    <el-header class="main-header">
-      <div class="logo">
-        <el-icon :size="28">
-          <div>🐱</div>
-        </el-icon>
-        <span class="logo-text">喵时光猫咖管理系统</span>
-      </div>
-      <div class="header-actions">
-        <el-dropdown>
-          <el-button type="text" class="user-info">
-            <el-avatar :size="32" :src="currentUser.avatar || defaultAvatar"></el-avatar>
-            <span>{{ currentUser.nickname || currentUser.username }}</span>
-            <el-icon :size="16" class="el-icon--right"></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="handleProfile">个人中心</el-dropdown-item>
-              <el-dropdown-item @click="handleSettings">系统设置</el-dropdown-item>
-              <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </el-header>
+  <AdminLayout>
+    <div class="page-title">数据概览</div>
 
-    <el-container class="main-container">
-      <!-- 侧边栏导航 -->
-      <el-aside width="220px" class="sidebar">
-        <el-menu :default-openeds="['dashboard']" :default-active="activeMenu" class="sidebar-menu"
-          @select="handleMenuSelect">
-          <el-menu-item index="dashboard">
-            <el-icon>
-              <Layout />
-            </el-icon>
-            <span>数据概览</span>
-          </el-menu-item>
-          <el-sub-menu index="users">
-            <template #title>
-              <el-icon>
+    <!-- 统计卡片 -->
+    <el-row :gutter="20" class="stats-row">
+      <el-col :span="6">
+        <el-card class="stat-card" hoverable>
+          <div class="stat-content">
+            <div class="stat-info">
+              <div class="stat-label">总用户数</div>
+              <div class="stat-value">{{ stats.totalUsers }}</div>
+            </div>
+            <div class="stat-icon icon-users">
+              <el-icon :size="28">
                 <User />
               </el-icon>
-              <span>用户管理</span>
-            </template>
-            <el-menu-item index="users">用户列表</el-menu-item>
-            <el-menu-item index="roles/list">角色权限</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="cats">
-            <template #title>
-              <el-icon>
-                <User />
-              </el-icon>
-              <span>猫咪管理</span>
-            </template>
-            <el-menu-item index="cats/list">猫咪列表</el-menu-item>
-            <el-menu-item index="cats/health">健康记录</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="reservations">
-            <template #title>
-              <el-icon>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card class="stat-card" hoverable>
+          <div class="stat-content">
+            <div class="stat-info">
+              <div class="stat-label">今日预约</div>
+              <div class="stat-value">{{ stats.todayReservations }}</div>
+            </div>
+            <div class="stat-icon icon-reservations">
+              <el-icon :size="28">
                 <Calendar />
               </el-icon>
-              <span>预约管理</span>
-            </template>
-            <el-menu-item index="appointments">预约列表</el-menu-item>
-            <el-menu-item index="reservations/slots">时段设置</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="products">
-            <template #title>
-              <el-icon>
-                <ShoppingCart />
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card class="stat-card" hoverable>
+          <div class="stat-content">
+            <div class="stat-info">
+              <div class="stat-label">本月销售额</div>
+              <div class="stat-value">¥{{ stats.monthlySales.toLocaleString() }}</div>
+            </div>
+            <div class="stat-icon icon-sales">
+              <el-icon :size="28">
+                <Money />
               </el-icon>
-              <span>商品管理</span>
-            </template>
-            <el-menu-item index="products/list">商品列表</el-menu-item>
-            <el-menu-item index="products/categories">分类管理</el-menu-item>
-            <el-menu-item index="products/orders">订单管理</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="activities">
-            <template #title>
-              <el-icon>
-                <ShoppingCart />
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card class="stat-card" hoverable>
+          <div class="stat-content">
+            <div class="stat-info">
+              <div class="stat-label">待处理事项</div>
+              <div class="stat-value">{{ stats.pendingTasks }}</div>
+            </div>
+            <div class="stat-icon icon-tasks">
+              <el-icon :size="28">
+                <TodoList />
               </el-icon>
-              <span>活动管理</span>
-            </template>
-            <el-menu-item index="activities/list">活动列表</el-menu-item>
-            <el-menu-item index="activities/create">创建活动</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="reviews">
-            <template #title>
-              <el-icon>
-                <ShoppingCart />
-              </el-icon>
-              <span>评价管理</span>
-            </template>
-            <el-menu-item index="reviews/list">评价列表</el-menu-item>
-            <el-menu-item index="reviews/settings">审核设置</el-menu-item>
-          </el-sub-menu>
-        </el-menu>
-      </el-aside>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
 
-      <!-- 主内容区 -->
-      <el-main class="content-area">
-        <div class="page-title">数据概览</div>
+    <!-- 图表区域 -->
+    <el-row :gutter="20" class="charts-row">
+      <el-col :span="12">
+        <el-card class="chart-card">
+          <template #header>
+            <div class="card-header">
+              <span>销售额趋势分析</span>
+              <el-select v-model="chartTimeRange" size="small" @change="handleTimeRangeChange">
+                <el-option label="本周" value="week"></el-option>
+                <el-option label="本月" value="month"></el-option>
+                <el-option label="本季度" value="quarter"></el-option>
+                <el-option label="本年" value="year"></el-option>
+              </el-select>
+            </div>
+            <div class="chart-container">
+              <canvas id="salesTrendChart"></canvas>
+            </div>
+          </template>
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card class="chart-card">
+          <template #header>
+            <div class="card-header">
+              <span>商品销售额占比</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="salesChart"></canvas>
+            </div>
+          </template>
+        </el-card>
+      </el-col>
+    </el-row>
 
-        <!-- 统计卡片 -->
-        <el-row :gutter="20" class="stats-row">
-          <el-col :span="6">
-            <el-card class="stat-card" hoverable>
-              <div class="stat-content">
-                <div class="stat-info">
-                  <div class="stat-label">总用户数</div>
-                  <div class="stat-value">{{ stats.totalUsers }}</div>
-                </div>
-                <div class="stat-icon icon-users">
-                  <el-icon :size="28">
-                    <User />
-                  </el-icon>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-          <el-col :span="6">
-            <el-card class="stat-card" hoverable>
-              <div class="stat-content">
-                <div class="stat-info">
-                  <div class="stat-label">今日预约</div>
-                  <div class="stat-value">{{ stats.todayReservations }}</div>
-                </div>
-                <div class="stat-icon icon-reservations">
-                  <el-icon :size="28">
-                    <Calendar />
-                  </el-icon>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-          <el-col :span="6">
-            <el-card class="stat-card" hoverable>
-              <div class="stat-content">
-                <div class="stat-info">
-                  <div class="stat-label">本月销售额</div>
-                  <div class="stat-value">¥{{ stats.monthlySales.toLocaleString() }}</div>
-                </div>
-                <div class="stat-icon icon-sales">
-                  <el-icon :size="28">
-                    <Money />
-                  </el-icon>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-          <el-col :span="6">
-            <el-card class="stat-card" hoverable>
-              <div class="stat-content">
-                <div class="stat-info">
-                  <div class="stat-label">待处理事项</div>
-                  <div class="stat-value">{{ stats.pendingTasks }}</div>
-                </div>
-                <div class="stat-icon icon-tasks">
-                  <el-icon :size="28">
-                    <TodoList />
-                  </el-icon>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <!-- 图表区域 -->
-        <el-row :gutter="20" class="charts-row">
-          <el-col :span="12">
-            <el-card class="chart-card">
-              <template #header>
-                <div class="card-header">
-                  <span>销售额趋势分析</span>
-                  <el-select v-model="chartTimeRange" size="small" @change="handleTimeRangeChange">
-                    <el-option label="本周" value="week"></el-option>
-                    <el-option label="本月" value="month"></el-option>
-                    <el-option label="本季度" value="quarter"></el-option>
-                    <el-option label="本年" value="year"></el-option>
-                  </el-select>
-                </div>
-                <div class="chart-container">
-                  <canvas id="salesTrendChart"></canvas>
-                </div>
-              </template>
-            </el-card>
-          </el-col>
-          <el-col :span="12">
-            <el-card class="chart-card">
-              <template #header>
-                <div class="card-header">
-                  <span>商品销售额占比</span>
-                </div>
-                <div class="chart-container">
-                  <canvas id="salesChart"></canvas>
-                </div>
-              </template>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <!-- 最近动态 -->
-        <el-row class="recent-activities-row">
-          <el-col :span="24">
-            <el-card class="activities-card">
-              <template #header>
-                <div class="card-header">
-                  <span>最近动态</span>
-                  <el-button size="small" type="text" @click="viewAllActivities">查看全部</el-button>
-                </div>
-                <el-timeline>
-                  <el-timeline-item v-for="(activity, index) in recentActivities" :key="index"
-                    :timestamp="formatTime(activity.time)" :icon="activity.icon" :type="activity.type">
-                    <el-card>
-                      <h4>{{ activity.title }}</h4>
-                      <p class="activity-content">{{ activity.content }}</p>
-                      <!-- <div v-if="activity.operations" class="activity-ops">
-                        <el-button v-for="op in activity.operations" :key="op.id" size="mini" :type="op.type"
-                          @click="handleActivityOp(op.action, activity.data)">
-                          {{ op.text }}
-                        </el-button>
-                      </div> -->
-                    </el-card>
-                  </el-timeline-item>
-                </el-timeline>
-              </template>
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-main>
-    </el-container>
-  </div>
+    <!-- 最近动态 -->
+    <el-row class="recent-activities-row">
+      <el-col :span="24">
+        <el-card class="activities-card">
+          <template #header>
+            <div class="card-header">
+              <span>最近动态</span>
+              <el-button size="small" type="text" @click="viewAllActivities">查看全部</el-button>
+            </div>
+            <el-timeline>
+              <el-timeline-item v-for="(activity, index) in recentActivities" :key="index"
+                :timestamp="formatTime(activity.time)" :icon="activity.icon" :type="activity.type">
+                <el-card>
+                  <h4>{{ activity.title }}</h4>
+                  <p class="activity-content">{{ activity.content }}</p>
+                  <!-- <div v-if="activity.operations" class="activity-ops">
+                    <el-button v-for="op in activity.operations" :key="op.id" size="mini" :type="op.type"
+                      @click="handleActivityOp(op.action, activity.data)">
+                      {{ op.text }}
+                    </el-button>
+                  </div> -->
+                </el-card>
+              </el-timeline-item>
+            </el-timeline>
+          </template>
+        </el-card>
+      </el-col>
+    </el-row>
+  </AdminLayout>
 </template>
 <!-- eslint-disable no-unused-vars -->
 <!--  eslint-disable no-undef  -->
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import {
-  Layout, User, Cat, Calendar, ShoppingCart,
-  Ticket, Comment, ArrowUp, ArrowDown,
-  Money, TodoList
+  User, Calendar, Money, TodoList
 } from '@element-plus/icons-vue';
 import {
   Chart as ChartJS,
@@ -259,6 +152,7 @@ import {
   LineController,
   DoughnutController
 } from 'chart.js';
+import AdminLayout from './AdminLayout.vue';
 
 // 注册所需组件
 ChartJS.register(
@@ -278,20 +172,9 @@ ChartJS.register(
 const router = useRouter();
 
 // 状态管理
-const activeMenu = ref('dashboard');
-const defaultAvatar = 'https://picsum.photos/seed/admin/100/100';
 const chartTimeRange = ref('month');
 const recentActivities = ref([]);
 let salesTrendChart = null;
-
-// 当前用户信息
-const currentUser = reactive({
-  id: 1,
-  username: 'admin',
-  nickname: '管理员',
-  avatar: '',
-  role: 'ADMIN'
-});
 
 // 统计数据
 const stats = reactive({
@@ -596,41 +479,9 @@ const initSalesChart = async () => {
 };
 
 // 方法
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-  if (key === 'dashboard') {
-    router.push('/admin/dashboard');
-  } else {
-    router.push(`/admin/${key}`);
-  }
-};
-
 const handleTimeRangeChange = async () => {
   ElMessage.info(`已切换到${chartTimeRange.value}数据`);
   await loadSalesTrendData(chartTimeRange.value);
-};
-
-const handleProfile = () => {
-  router.push('/admin/profile');
-};
-
-const handleSettings = () => {
-  router.push('/admin/settings');
-};
-
-const handleLogout = () => {
-  ElMessageBox.confirm(
-    '确定要退出登录吗？',
-    '确认退出',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    router.push('/');
-    ElMessage.success('已退出登录');
-  });
 };
 
 
@@ -665,100 +516,6 @@ const formatTime = (timeStr) => {
 </script>
 
 <style scoped>
-.admin-dashboard {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #f5f7fa;
-}
-
-.main-header {
-  height: 60px;
-  background-color: #fff7ee;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-text {
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #333;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.user-info:hover {
-  color: #333 !important;
-  border: none !important;
-  background-color: transparent !important;
-  outline: none !important;
-}
-
-.main-container {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-.sidebar {
-  background-color: #fff7ee;
-  color: #333;
-  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.1);
-}
-
-.sidebar-menu {
-  width: 100%;
-  height: 100%;
-  background-color: #fff7ee;
-  border-right: none;
-}
-
-.sidebar-menu .el-sub-menu__title,
-.sidebar-menu .el-menu-item {
-  color: #666;
-  height: 50px;
-  line-height: 50px;
-}
-
-.sidebar-menu .el-sub-menu__title:hover,
-.sidebar-menu .el-menu-item:hover {
-  background-color: #fff7ee;
-  color: #333;
-}
-
-.sidebar-menu .el-menu-item.is-active {
-  background-color: #fff7ee;
-  color: #333;
-}
-
-.content-area {
-  padding: 20px;
-  overflow-y: auto;
-}
 
 .page-title {
   font-size: 20px;

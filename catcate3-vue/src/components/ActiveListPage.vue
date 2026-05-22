@@ -1,5 +1,6 @@
 <template>
-    <div class="activity-management">
+    <AdminLayout>
+        <div class="activity-management">
         <!-- 活动列表页面 -->
         <!-- 页面标题和操作区 -->
         <div class="page-header">
@@ -332,7 +333,8 @@
                 </el-button>
             </template>
         </el-dialog>
-    </div>
+        </div>
+    </AdminLayout>
 </template>
 
 <!-- eslint-disable no-unused-vars -->
@@ -346,6 +348,7 @@ import {
     Refresh, Star, StarOff, Time, Calendar,
     SortUp
 } from '@element-plus/icons-vue';
+import AdminLayout from './AdminLayout.vue';
 
 // 状态管理
 const loading = ref(false);
@@ -1093,6 +1096,19 @@ const handleViewActivity = (row) => {
     dialogVisible.value = true;
 };
 
+// 格式化日期时间为后端能接受的格式
+const formatDateTime = (date) => {
+    if (!date) return null;
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+};
+
 // 保存活动信息
 const handleSaveActivity = async () => {
     // 确保表单ref已初始化
@@ -1103,12 +1119,24 @@ const handleSaveActivity = async () => {
         await activityFormRef.value.validate();
         loading.value = true;
 
-        // 处理时间格式
+        // 构建正确格式的数据对象
         const submitForm = {
-            ...activityForm,
-            startTime: activityForm.startTime ? new Date(activityForm.startTime).toISOString() : '',
-            endTime: activityForm.endTime ? new Date(activityForm.endTime).toISOString() : ''
+            id: activityForm.id ? Number(activityForm.id) : null,
+            title: activityForm.title,
+            content: activityForm.content,
+            coverImage: activityForm.coverImage || null,
+            activityType: activityForm.activityType,
+            setmealPrice: activityForm.activityType === 'SETMEAL' ? (activityForm.setmealPrice !== null && activityForm.setmealPrice !== undefined ? Number(activityForm.setmealPrice) : 0) : null,
+            startTime: formatDateTime(activityForm.startTime),
+            endTime: formatDateTime(activityForm.endTime),
+            status: activityForm.status,
+            isFeatured: activityForm.isFeatured !== null && activityForm.isFeatured !== undefined ? Number(activityForm.isFeatured) : 0,
+            viewCount: activityForm.viewCount !== null && activityForm.viewCount !== undefined ? Number(activityForm.viewCount) : 0,
+            createTime: activityForm.createTime ? formatDateTime(activityForm.createTime) : null,
+            updateTime: activityForm.updateTime ? formatDateTime(activityForm.updateTime) : null
         };
+
+        console.log('提交的数据:', submitForm);
 
         // 请求后端数据
         const res = await fetch("http://localhost:8081/catcate/activities/addOrUpdate", {
@@ -1122,21 +1150,20 @@ const handleSaveActivity = async () => {
         // 处理响应
         if (res.status === 200) {
             const data = await res.json();
-            if (res.ok === true) {
-                ElMessage.success(dialogType.value === 'add' ? "活动新增成功" : "活动更新成功");
-                // 刷新活动列表
-                fetchActivityList();
-                // 关闭弹窗
-                dialogVisible.value = false;
-            } else {
-                ElMessage.error(data.msg || (dialogType.value === 'add' ? "活动新增失败" : "活动更新失败"));
-            }
+            ElMessage.success(dialogType.value === 'add' ? "活动新增成功" : "活动更新成功");
+            // 刷新活动列表
+            fetchActivityList();
+            // 关闭弹窗
+            dialogVisible.value = false;
         } else {
-            ElMessage.error("网络错误");
+            const errorText = await res.text();
+            console.error('错误响应:', errorText);
+            ElMessage.error("网络错误或请求格式错误");
         }
 
         loading.value = false;
     } catch (error) {
+        console.error('保存失败:', error);
         // 表单验证失败
         loading.value = false;
         return;

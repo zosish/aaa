@@ -84,6 +84,46 @@ public class Reservations implements Serializable {
      */
     private LocalDateTime updateTime;
 
+    private String username;
+
+    private String phone;
+
+    private Long tableId;
+
+    private String tableNumber;
+
+    public String getTableNumber() {
+        return tableNumber;
+    }
+
+    public void setTableNumber(String tableNumber) {
+        this.tableNumber = tableNumber;
+    }
+
+    public Long getTableId() {
+        return tableId;
+    }
+
+    public void setTableId(Long tableId) {
+        this.tableId = tableId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
     public Long getId() {
         return id;
     }
@@ -191,19 +231,23 @@ public class Reservations implements Serializable {
     @Override
     public String toString() {
         return "Reservations{" +
-            "id = " + id +
-            ", userId = " + userId +
-            ", catId = " + catId +
-            ", reservationDate = " + reservationDate +
-            ", timeSlot = " + timeSlot +
-            ", visitorCount = " + visitorCount +
-            ", purpose = " + purpose +
-            ", status = " + status +
-            ", adminNotes = " + adminNotes +
-            ", userNotes = " + userNotes +
-            ", cancelReason = " + cancelReason +
-            ", createTime = " + createTime +
-            ", updateTime = " + updateTime +
-        "}";
+                "id=" + id +
+                ", userId=" + userId +
+                ", catId=" + catId +
+                ", reservationDate=" + reservationDate +
+                ", timeSlot='" + timeSlot + '\'' +
+                ", visitorCount=" + visitorCount +
+                ", purpose='" + purpose + '\'' +
+                ", status='" + status + '\'' +
+                ", adminNotes='" + adminNotes + '\'' +
+                ", userNotes='" + userNotes + '\'' +
+                ", cancelReason='" + cancelReason + '\'' +
+                ", createTime=" + createTime +
+                ", updateTime=" + updateTime +
+                ", username='" + username + '\'' +
+                ", phone='" + phone + '\'' +
+                ", tableId=" + tableId +
+                ", tableNumber='" + tableNumber + '\'' +
+                '}';
     }
 }

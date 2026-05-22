@@ -180,7 +180,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Star, Plus, RefreshLeft } from '@element-plus/icons-vue';
 import { api } from '@/utils/api';
 import { getUserId, isLoggedIn } from '@/utils/auth';
-import Layout from './Layout.vue';
+import Layout from './AppLayout.vue';
 
 // 路由和状态
 const route = useRoute();

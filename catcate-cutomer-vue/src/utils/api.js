@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { getToken, clearAuth } from './auth';
 
 // API基础配置
 const BASE_URL = 'http://localhost:8083/catcatecutomer';
@@ -57,11 +57,23 @@ export async function apiRequest(url, options = {}) {
       if (result.code === 200) {
         // 返回包含所有数据的对象，让调用者决定使用哪个字段
         return result;
+      } else if (result.code === 401 || result.code === 403) {
+        // 认证失败或无权限，跳转到登录页面
+        console.error('认证失败或无权限:', result.message);
+        clearAuth();
+        window.location.href = '/login';
+        throw new Error(result.message || '认证失败');
       } else if (result.success !== undefined) {
         // 处理包含success字段的响应格式
         if (result.success) {
           return result;
         } else {
+          // 检查是否是认证相关错误
+          if (result.message && (result.message.includes('认证') || result.message.includes('过期'))) {
+            console.error('认证错误:', result.message);
+            clearAuth();
+            window.location.href = '/login';
+          }
           throw new Error(result.message || '请求失败');
         }
       } else {
@@ -77,6 +89,12 @@ export async function apiRequest(url, options = {}) {
           if (result.success) {
             return result;
           } else {
+            // 检查是否是认证相关错误
+            if (result.message && (result.message.includes('认证') || result.message.includes('过期'))) {
+              console.error('认证错误:', result.message);
+              clearAuth();
+              window.location.href = '/login';
+            }
             throw new Error(result.message || '请求失败');
           }
         }
@@ -88,6 +106,12 @@ export async function apiRequest(url, options = {}) {
     }
   } catch (error) {
     console.error('API请求失败:', error);
+    // 检查错误信息是否包含认证相关内容
+    if (error.message && (error.message.includes('认证') || error.message.includes('过期'))) {
+      console.error('认证错误，跳转到登录页面');
+      clearAuth();
+      window.location.href = '/login';
+    }
     throw error;
   }
 }
